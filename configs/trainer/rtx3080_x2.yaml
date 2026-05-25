@@ -1,0 +1,19 @@
+# Two RTX 3080s (10–12 GB each = 20–24 GB pooled via DDP).
+# Windows DDP uses GLOO backend (NCCL ships Linux-only).
+# Realistic model ceiling: ~100M params with bf16-mixed.
+_target_key: lightning
+
+max_epochs: 20
+batch_size: 32              # per-device; effective = 32 * 2 = 64
+window_length: 256
+window_stride: 128
+learning_rate: 0.0005       # scaled with effective batch
+seed: 0
+device: cuda
+precision: bf16-mixed
+strategy: ddp_find_unused_parameters_true   # DDP. Windows users: set TORCH_DISTRIBUTED_BACKEND=gloo
+num_workers: 4
+checkpoint_dir: checkpoints
+extra:
+  grad_clip_norm: 1.0
+  log_every_n_steps: 20

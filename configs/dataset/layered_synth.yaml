@@ -1,0 +1,24 @@
+# Top-level Hydra group for the layered synthetic generator.
+# Most experiments should override with a concrete preset (e.g.,
+# `dataset@_global_=presets/leo_eps_24h`) rather than configure components inline.
+_target_key: layered_synth
+
+n_samples: 86400        # 24 hours @ 1 Hz
+sample_rate_hz: 1.0
+seed: 0
+name: layered_synth
+subsystem: unknown
+
+# By default produce a tiny placeholder so a bare `dataset=layered_synth`
+# selection still yields a runnable dataset. Real configs override this list.
+channels:
+  - {name: ch0, units: "", subsystem: unknown, sample_rate_hz: 1.0}
+
+components:
+  - _target_: dgx_ts_lab.datasets.synthetic.layered.physics.OrbitalSinusoid
+    channel: ch0
+    amplitude: 1.0
+    period_s: 5400.0
+  - _target_: dgx_ts_lab.datasets.synthetic.layered.noise.GaussianNoise
+    channel: ch0
+    std: 0.05

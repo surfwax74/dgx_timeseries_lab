@@ -1,0 +1,36 @@
+# @package _global_
+# Phase 2 bake-off on the realistic 83-channel LEO EPS preset.
+#
+# CPU-friendly settings (wider stride, fewer epochs) so this completes in
+# minutes on the Windows dev box. The DGX run uses trainer=single_h200 +
+# more epochs for real numbers.
+#
+# Fast "interesting smoke" alternative: phase1_layered.yaml (6-ch preset).
+defaults:
+  - override /trainer: single_cpu
+
+trainer:
+  max_epochs: 1
+  batch_size: 16
+  window_length: 128
+  window_stride: 256        # wide stride → fewer windows → faster
+  learning_rate: 0.0005
+
+suite:
+  name: phase2_bakeoff_leo_eps_full
+  mode: pretrain
+
+  detectors:
+    - {key: rolling_mean,        params: {}}
+    - {key: patchtst_mae,        params: {window_length: 128, patch_len: 16, d_model: 64, n_layers: 2, n_heads: 2}}
+    - {key: anomaly_transformer, params: {window_length: 128, d_model: 64, n_layers: 2, n_heads: 2}}
+    - {key: dcdetector,          params: {window_length: 128, patch_len: 16, d_model: 32}}
+
+  datasets:
+    - key: parquet_telemetry
+      params:
+        data_path: data/synth/leo_eps_full_24h
+
+  seeds: [0]
+
+output_dir: benchmark_reports

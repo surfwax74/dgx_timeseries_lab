@@ -1,0 +1,39 @@
+# @package _global_
+# Phase 3 bake-off: from-scratch vs zero-shot foundation vs LoRA foundation.
+# Runs against the rich 83-channel LEO EPS preset.
+
+defaults:
+  - override /trainer: single_cpu
+
+trainer:
+  max_epochs: 1
+  batch_size: 16
+  window_length: 128
+  window_stride: 256
+  learning_rate: 0.0003
+  extra: {}                 # LoRA flag is set per-detector below
+
+suite:
+  name: phase3_bakeoff_leo_eps_full
+  mode: pretrain
+
+  detectors:
+    # Phase 2 reference
+    - {key: rolling_mean,        params: {}}
+    - {key: anomaly_transformer, params: {window_length: 128, d_model: 64, n_layers: 2, n_heads: 2}}
+    # Phase 3 — foundation zero-shot (Chronos with its actual tiny config)
+    - {key: chronos,             params: {model: amazon/chronos-t5-tiny, window_length: 128}}
+    # Phase 3 — foundation LoRA
+    # (the benchmark suite passes `params` to the factory; LoRA is enabled by
+    #  the experiment's trainer.extra.use_lora flag on a per-run basis once
+    #  the per-detector trainer override is wired in Phase 3.1)
+    - {key: moment,              params: {model: AutonLab/MOMENT-1-small, window_length: 128, patch_len: 8, d_model: 64}}
+
+  datasets:
+    - key: parquet_telemetry
+      params:
+        data_path: data/synth/leo_eps_full_24h
+
+  seeds: [0]
+
+output_dir: benchmark_reports

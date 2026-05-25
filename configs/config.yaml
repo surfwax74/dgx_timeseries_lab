@@ -1,0 +1,29 @@
+# Top-level Hydra config — overridden by experiment compositions.
+defaults:
+  - _self_
+  - dataset: trivial_synth
+  - model: rolling_mean
+  - trainer: single_cpu
+  - experiment: null
+
+# Fit mode: pretrain | finetune | zeroshot
+mode: zeroshot
+
+# MLflow experiment name (per-config, not per-run)
+mlflow:
+  experiment_name: dgx_timeseries_lab
+  tracking_uri: null  # null → local mlruns/ in cwd
+  run_name: null      # null → MLflow autogenerates
+
+# Output directory for `dgx-ts synth` (overridable per invocation).
+# Each synth run writes into <output_dir>/<dataset_name>/.
+output_dir: data/synth
+
+# Hydra cwd behavior — keep run *outputs* under outputs/ for traceability, but
+# do NOT change cwd. This way relative paths in YAMLs (data/synth/..., etc.)
+# resolve against where the user actually invoked `dgx-ts` from.
+hydra:
+  run:
+    dir: outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}
+  job:
+    chdir: false

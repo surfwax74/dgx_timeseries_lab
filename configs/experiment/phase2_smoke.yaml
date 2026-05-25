@@ -1,0 +1,24 @@
+# @package _global_
+# Phase 2 single-detector smoke test. Uses PatchTST+MAE (simplest neural
+# architecture) on the trivial synth dataset to validate the Fabric loop.
+defaults:
+  - override /dataset: trivial_synth
+  - override /model: patchtst_mae
+  - override /trainer: single_cpu
+
+mode: pretrain
+
+trainer:
+  max_epochs: 2
+  batch_size: 32
+  window_length: 128
+  window_stride: 64
+
+# Detector window_length MUST match trainer.window_length for now — Phase 2
+# detectors fix the patch grid at init time. Phase 3 will make this dynamic.
+model:
+  window_length: 128
+
+mlflow:
+  experiment_name: phase2_smoke
+  run_name: patchtst_mae_on_trivial_synth

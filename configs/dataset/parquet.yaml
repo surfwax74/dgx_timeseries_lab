@@ -1,0 +1,7 @@
+# Load a dataset previously written by `dgx-ts synth`.
+# data_path is the dir holding data.parquet/labels.parquet/manifest.yaml/etc.
+_target_key: parquet_telemetry
+
+data_path: data/synth/leo_eps_24h
+# sample_rate_hz: null  ← falls back to manifest.yaml's value
+# name: null            ← falls back to manifest.yaml's name

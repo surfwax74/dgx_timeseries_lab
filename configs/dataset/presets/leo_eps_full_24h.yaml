@@ -1,0 +1,383 @@
+# Comprehensive LEO EPS preset — 24h @ 1Hz, 83 channels with full Side-A/Side-B
+# redundancy for every unit. Realistic shape for a small/medium-sized satellite.
+#
+# Block summary:
+#   Solar Arrays (SA+X, SA-X)   22 channels   3 temps + V + I + SADA(angle, motor) + 4 strings  × 2 wings
+#   Batteries  (BAT_A, BAT_B)   30 channels   V + I + 4 temps + SoC + 8 cell voltages           × 2 batteries
+#   PDUs       (PDU_A, PDU_B)   18 channels   pri/sec V+I (4) + 4 load currents + temp          × 2 PDUs
+#   PCUs       (PCU_A, PCU_B)    8 channels   reg V + reg I + MPPT state + temp                 × 2 PCUs
+#   Loads                        5 channels   payload, comms TX, 2 heaters, OBC
+#
+# Cross-channel realism via L3:
+#   - Each panel current = sum of its four cell-string currents.
+#   - Each PDU primary-bus current = sum of its four load currents.
+#   - Each PDU bus voltage sags slightly under bus current (InverseCoupling).
+#   - Battery current driven naturally by sun/eclipse via BatterySoC component.
+#   - Cell voltages within a battery share common-mode noise (CorrelatedGaussianNoise).
+#
+# EPS-specific fault patterns:
+#   - Cell imbalance:       DriftFault on one cell with persist=True
+#   - String dropout:       DropoutFault on a cell-string current
+#   - SADA encoder stuck:   StuckAtFault on sada_angle
+#   - Bus undervoltage:     OscillationFault on a primary bus voltage
+#   - Cross-strap switch:   RegimeChange on a PDU load
+#   - Sensor drift onset:   DriftFault on a battery temp
+#   - Radiation hit:        PointFault on cell voltages
+
+_target_key: layered_synth
+n_samples: 86400
+sample_rate_hz: 1.0
+seed: 42
+name: leo_eps_full_24h
+subsystem: eps
+
+channels:
+  # ── Solar Array +X (sa_px) ───────────────────────────────────────────
+  - {name: sa_px_temp_top,        units: degC, subsystem: eps, sample_rate_hz: 1.0, description: "SA+X panel temperature, top zone"}
+  - {name: sa_px_temp_mid,        units: degC, subsystem: eps, sample_rate_hz: 1.0, description: "SA+X panel temperature, mid zone"}
+  - {name: sa_px_temp_bot,        units: degC, subsystem: eps, sample_rate_hz: 1.0, description: "SA+X panel temperature, bottom zone"}
+  - {name: sa_px_current,         units: A,    subsystem: eps, sample_rate_hz: 1.0, description: "SA+X total panel current (sum of strings)"}
+  - {name: sa_px_voltage,         units: V,    subsystem: eps, sample_rate_hz: 1.0, description: "SA+X panel voltage at PCU input"}
+  - {name: sa_px_sada_angle,      units: rad,  subsystem: eps, sample_rate_hz: 1.0, description: "SA+X SADA position angle"}
+  - {name: sa_px_sada_motor_i,    units: A,    subsystem: eps, sample_rate_hz: 1.0, description: "SA+X SADA motor current"}
+  - {name: sa_px_str1_current,    units: A,    subsystem: eps, sample_rate_hz: 1.0, description: "SA+X cell string 1 current"}
+  - {name: sa_px_str2_current,    units: A,    subsystem: eps, sample_rate_hz: 1.0, description: "SA+X cell string 2 current"}
+  - {name: sa_px_str3_current,    units: A,    subsystem: eps, sample_rate_hz: 1.0, description: "SA+X cell string 3 current"}
+  - {name: sa_px_str4_current,    units: A,    subsystem: eps, sample_rate_hz: 1.0, description: "SA+X cell string 4 current"}
+
+  # ── Solar Array -X (sa_mx) ───────────────────────────────────────────
+  - {name: sa_mx_temp_top,        units: degC, subsystem: eps, sample_rate_hz: 1.0, description: "SA-X panel temperature, top zone"}
+  - {name: sa_mx_temp_mid,        units: degC, subsystem: eps, sample_rate_hz: 1.0, description: "SA-X panel temperature, mid zone"}
+  - {name: sa_mx_temp_bot,        units: degC, subsystem: eps, sample_rate_hz: 1.0, description: "SA-X panel temperature, bottom zone"}
+  - {name: sa_mx_current,         units: A,    subsystem: eps, sample_rate_hz: 1.0, description: "SA-X total panel current"}
+  - {name: sa_mx_voltage,         units: V,    subsystem: eps, sample_rate_hz: 1.0, description: "SA-X panel voltage at PCU input"}
+  - {name: sa_mx_sada_angle,      units: rad,  subsystem: eps, sample_rate_hz: 1.0, description: "SA-X SADA position angle"}
+  - {name: sa_mx_sada_motor_i,    units: A,    subsystem: eps, sample_rate_hz: 1.0, description: "SA-X SADA motor current"}
+  - {name: sa_mx_str1_current,    units: A,    subsystem: eps, sample_rate_hz: 1.0, description: "SA-X cell string 1 current"}
+  - {name: sa_mx_str2_current,    units: A,    subsystem: eps, sample_rate_hz: 1.0, description: "SA-X cell string 2 current"}
+  - {name: sa_mx_str3_current,    units: A,    subsystem: eps, sample_rate_hz: 1.0, description: "SA-X cell string 3 current"}
+  - {name: sa_mx_str4_current,    units: A,    subsystem: eps, sample_rate_hz: 1.0, description: "SA-X cell string 4 current"}
+
+  # ── Battery A (bat_a) ────────────────────────────────────────────────
+  - {name: bat_a_voltage,         units: V,    subsystem: eps, sample_rate_hz: 1.0, description: "BAT_A terminal voltage"}
+  - {name: bat_a_current,         units: A,    subsystem: eps, sample_rate_hz: 1.0, description: "BAT_A current (+ charge, - discharge)"}
+  - {name: bat_a_temp1,           units: degC, subsystem: eps, sample_rate_hz: 1.0, description: "BAT_A cell-bank temp 1"}
+  - {name: bat_a_temp2,           units: degC, subsystem: eps, sample_rate_hz: 1.0, description: "BAT_A cell-bank temp 2"}
+  - {name: bat_a_temp3,           units: degC, subsystem: eps, sample_rate_hz: 1.0, description: "BAT_A cell-bank temp 3"}
+  - {name: bat_a_temp4,           units: degC, subsystem: eps, sample_rate_hz: 1.0, description: "BAT_A cell-bank temp 4"}
+  - {name: bat_a_soc,             units: pct,  subsystem: eps, sample_rate_hz: 1.0, description: "BAT_A state of charge (0-1)"}
+  - {name: bat_a_cell01_v,        units: V,    subsystem: eps, sample_rate_hz: 1.0, description: "BAT_A cell 01 voltage"}
+  - {name: bat_a_cell02_v,        units: V,    subsystem: eps, sample_rate_hz: 1.0, description: "BAT_A cell 02 voltage"}
+  - {name: bat_a_cell03_v,        units: V,    subsystem: eps, sample_rate_hz: 1.0, description: "BAT_A cell 03 voltage"}
+  - {name: bat_a_cell04_v,        units: V,    subsystem: eps, sample_rate_hz: 1.0, description: "BAT_A cell 04 voltage"}
+  - {name: bat_a_cell05_v,        units: V,    subsystem: eps, sample_rate_hz: 1.0, description: "BAT_A cell 05 voltage"}
+  - {name: bat_a_cell06_v,        units: V,    subsystem: eps, sample_rate_hz: 1.0, description: "BAT_A cell 06 voltage"}
+  - {name: bat_a_cell07_v,        units: V,    subsystem: eps, sample_rate_hz: 1.0, description: "BAT_A cell 07 voltage"}
+  - {name: bat_a_cell08_v,        units: V,    subsystem: eps, sample_rate_hz: 1.0, description: "BAT_A cell 08 voltage"}
+
+  # ── Battery B (bat_b) ────────────────────────────────────────────────
+  - {name: bat_b_voltage,         units: V,    subsystem: eps, sample_rate_hz: 1.0, description: "BAT_B terminal voltage"}
+  - {name: bat_b_current,         units: A,    subsystem: eps, sample_rate_hz: 1.0, description: "BAT_B current"}
+  - {name: bat_b_temp1,           units: degC, subsystem: eps, sample_rate_hz: 1.0, description: "BAT_B cell-bank temp 1"}
+  - {name: bat_b_temp2,           units: degC, subsystem: eps, sample_rate_hz: 1.0, description: "BAT_B cell-bank temp 2"}
+  - {name: bat_b_temp3,           units: degC, subsystem: eps, sample_rate_hz: 1.0, description: "BAT_B cell-bank temp 3"}
+  - {name: bat_b_temp4,           units: degC, subsystem: eps, sample_rate_hz: 1.0, description: "BAT_B cell-bank temp 4"}
+  - {name: bat_b_soc,             units: pct,  subsystem: eps, sample_rate_hz: 1.0, description: "BAT_B state of charge (0-1)"}
+  - {name: bat_b_cell01_v,        units: V,    subsystem: eps, sample_rate_hz: 1.0, description: "BAT_B cell 01 voltage"}
+  - {name: bat_b_cell02_v,        units: V,    subsystem: eps, sample_rate_hz: 1.0, description: "BAT_B cell 02 voltage"}
+  - {name: bat_b_cell03_v,        units: V,    subsystem: eps, sample_rate_hz: 1.0, description: "BAT_B cell 03 voltage"}
+  - {name: bat_b_cell04_v,        units: V,    subsystem: eps, sample_rate_hz: 1.0, description: "BAT_B cell 04 voltage"}
+  - {name: bat_b_cell05_v,        units: V,    subsystem: eps, sample_rate_hz: 1.0, description: "BAT_B cell 05 voltage"}
+  - {name: bat_b_cell06_v,        units: V,    subsystem: eps, sample_rate_hz: 1.0, description: "BAT_B cell 06 voltage"}
+  - {name: bat_b_cell07_v,        units: V,    subsystem: eps, sample_rate_hz: 1.0, description: "BAT_B cell 07 voltage"}
+  - {name: bat_b_cell08_v,        units: V,    subsystem: eps, sample_rate_hz: 1.0, description: "BAT_B cell 08 voltage"}
+
+  # ── PDU A (pdu_a) ────────────────────────────────────────────────────
+  - {name: pdu_a_pri_v,           units: V,    subsystem: eps, sample_rate_hz: 1.0, description: "PDU_A primary 28V bus voltage"}
+  - {name: pdu_a_pri_i,           units: A,    subsystem: eps, sample_rate_hz: 1.0, description: "PDU_A primary bus total current"}
+  - {name: pdu_a_sec_v,           units: V,    subsystem: eps, sample_rate_hz: 1.0, description: "PDU_A secondary 5V bus voltage"}
+  - {name: pdu_a_sec_i,           units: A,    subsystem: eps, sample_rate_hz: 1.0, description: "PDU_A secondary bus current"}
+  - {name: pdu_a_load1_i,         units: A,    subsystem: eps, sample_rate_hz: 1.0, description: "PDU_A representative load 1 current"}
+  - {name: pdu_a_load2_i,         units: A,    subsystem: eps, sample_rate_hz: 1.0, description: "PDU_A representative load 2 current"}
+  - {name: pdu_a_load3_i,         units: A,    subsystem: eps, sample_rate_hz: 1.0, description: "PDU_A representative load 3 current"}
+  - {name: pdu_a_load4_i,         units: A,    subsystem: eps, sample_rate_hz: 1.0, description: "PDU_A representative load 4 current"}
+  - {name: pdu_a_temp,            units: degC, subsystem: eps, sample_rate_hz: 1.0, description: "PDU_A internal temperature"}
+
+  # ── PDU B (pdu_b) ────────────────────────────────────────────────────
+  - {name: pdu_b_pri_v,           units: V,    subsystem: eps, sample_rate_hz: 1.0, description: "PDU_B primary 28V bus voltage"}
+  - {name: pdu_b_pri_i,           units: A,    subsystem: eps, sample_rate_hz: 1.0, description: "PDU_B primary bus total current"}
+  - {name: pdu_b_sec_v,           units: V,    subsystem: eps, sample_rate_hz: 1.0, description: "PDU_B secondary 5V bus voltage"}
+  - {name: pdu_b_sec_i,           units: A,    subsystem: eps, sample_rate_hz: 1.0, description: "PDU_B secondary bus current"}
+  - {name: pdu_b_load1_i,         units: A,    subsystem: eps, sample_rate_hz: 1.0, description: "PDU_B representative load 1 current"}
+  - {name: pdu_b_load2_i,         units: A,    subsystem: eps, sample_rate_hz: 1.0, description: "PDU_B representative load 2 current"}
+  - {name: pdu_b_load3_i,         units: A,    subsystem: eps, sample_rate_hz: 1.0, description: "PDU_B representative load 3 current"}
+  - {name: pdu_b_load4_i,         units: A,    subsystem: eps, sample_rate_hz: 1.0, description: "PDU_B representative load 4 current"}
+  - {name: pdu_b_temp,            units: degC, subsystem: eps, sample_rate_hz: 1.0, description: "PDU_B internal temperature"}
+
+  # ── PCU A (pcu_a) ────────────────────────────────────────────────────
+  - {name: pcu_a_reg_v,           units: V,    subsystem: eps, sample_rate_hz: 1.0, description: "PCU_A regulated bus voltage"}
+  - {name: pcu_a_reg_i,           units: A,    subsystem: eps, sample_rate_hz: 1.0, description: "PCU_A regulated bus current"}
+  - {name: pcu_a_mppt_state,      units: "",   subsystem: eps, sample_rate_hz: 1.0, description: "PCU_A MPPT tracker state (scalar)"}
+  - {name: pcu_a_temp,            units: degC, subsystem: eps, sample_rate_hz: 1.0, description: "PCU_A internal temperature"}
+
+  # ── PCU B (pcu_b) ────────────────────────────────────────────────────
+  - {name: pcu_b_reg_v,           units: V,    subsystem: eps, sample_rate_hz: 1.0, description: "PCU_B regulated bus voltage"}
+  - {name: pcu_b_reg_i,           units: A,    subsystem: eps, sample_rate_hz: 1.0, description: "PCU_B regulated bus current"}
+  - {name: pcu_b_mppt_state,      units: "",   subsystem: eps, sample_rate_hz: 1.0, description: "PCU_B MPPT tracker state (scalar)"}
+  - {name: pcu_b_temp,            units: degC, subsystem: eps, sample_rate_hz: 1.0, description: "PCU_B internal temperature"}
+
+  # ── Major loads ──────────────────────────────────────────────────────
+  - {name: payload_power,         units: W,    subsystem: payload, sample_rate_hz: 1.0, description: "Payload instantaneous power"}
+  - {name: comms_tx_power,        units: W,    subsystem: comms,   sample_rate_hz: 1.0, description: "Comms TX RF power"}
+  - {name: heater_z1_i,           units: A,    subsystem: tcs,     sample_rate_hz: 1.0, description: "Heater zone 1 current"}
+  - {name: heater_z2_i,           units: A,    subsystem: tcs,     sample_rate_hz: 1.0, description: "Heater zone 2 current"}
+  - {name: obc_power,             units: W,    subsystem: obdh,    sample_rate_hz: 1.0, description: "OBC instantaneous power"}
+
+components:
+  # ════════════════════════════════════════════════════════════════════
+  # L2 — modes (eclipse cycle + Poisson payload activations)
+  # ════════════════════════════════════════════════════════════════════
+  - _target_: dgx_ts_lab.datasets.synthetic.layered.modes.ModeMachine
+    period_s: 5400.0
+    eclipse_fraction: 0.35
+    payload_active_rate_per_hour: 0.8
+    payload_duration_s: 600.0
+
+  # ════════════════════════════════════════════════════════════════════
+  # L1 PHYSICS — Solar arrays
+  # ════════════════════════════════════════════════════════════════════
+  # SA+X panel temps (eclipse-driven). Slightly different equilibria across zones.
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.physics.ThermalDutyCycle, channel: sa_px_temp_top, equilibrium_sun_C: 58.0, equilibrium_shade_C: -42.0, time_constant_s: 580.0, initial_C: 20.0}
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.physics.ThermalDutyCycle, channel: sa_px_temp_mid, equilibrium_sun_C: 55.0, equilibrium_shade_C: -40.0, time_constant_s: 600.0, initial_C: 19.0}
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.physics.ThermalDutyCycle, channel: sa_px_temp_bot, equilibrium_sun_C: 52.0, equilibrium_shade_C: -38.0, time_constant_s: 620.0, initial_C: 18.0}
+  # SA+X strings — each illuminated when in sun (use OrbitalSinusoid for ripple + ConstantBaseline)
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.physics.ConstantBaseline, channel: sa_px_str1_current, value: 0.85}
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.physics.ConstantBaseline, channel: sa_px_str2_current, value: 0.83}
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.physics.ConstantBaseline, channel: sa_px_str3_current, value: 0.88}
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.physics.ConstantBaseline, channel: sa_px_str4_current, value: 0.81}
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.physics.OrbitalSinusoid, channel: sa_px_str1_current, amplitude: 0.05, period_s: 5400.0}
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.physics.OrbitalSinusoid, channel: sa_px_str2_current, amplitude: 0.05, period_s: 5400.0, phase: 0.05}
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.physics.OrbitalSinusoid, channel: sa_px_str3_current, amplitude: 0.05, period_s: 5400.0, phase: 0.10}
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.physics.OrbitalSinusoid, channel: sa_px_str4_current, amplitude: 0.05, period_s: 5400.0, phase: 0.15}
+  # SA+X voltage (PCU input): nominal + small orbital ripple
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.physics.ConstantBaseline, channel: sa_px_voltage, value: 32.0}
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.physics.OrbitalSinusoid, channel: sa_px_voltage, amplitude: 0.4, period_s: 5400.0}
+  # SA+X SADA — sun-tracking angle
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.physics.OrbitalSinusoid, channel: sa_px_sada_angle, amplitude: 3.14159, period_s: 5400.0}
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.physics.ConstantBaseline, channel: sa_px_sada_motor_i, value: 0.08}
+
+  # SA-X (mirror with phase offset to model second wing)
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.physics.ThermalDutyCycle, channel: sa_mx_temp_top, equilibrium_sun_C: 56.0, equilibrium_shade_C: -41.0, time_constant_s: 590.0, initial_C: 19.0}
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.physics.ThermalDutyCycle, channel: sa_mx_temp_mid, equilibrium_sun_C: 54.0, equilibrium_shade_C: -39.0, time_constant_s: 610.0, initial_C: 18.5}
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.physics.ThermalDutyCycle, channel: sa_mx_temp_bot, equilibrium_sun_C: 51.0, equilibrium_shade_C: -37.0, time_constant_s: 630.0, initial_C: 17.5}
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.physics.ConstantBaseline, channel: sa_mx_str1_current, value: 0.84}
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.physics.ConstantBaseline, channel: sa_mx_str2_current, value: 0.82}
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.physics.ConstantBaseline, channel: sa_mx_str3_current, value: 0.87}
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.physics.ConstantBaseline, channel: sa_mx_str4_current, value: 0.80}
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.physics.OrbitalSinusoid, channel: sa_mx_str1_current, amplitude: 0.05, period_s: 5400.0, phase: 0.02}
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.physics.OrbitalSinusoid, channel: sa_mx_str2_current, amplitude: 0.05, period_s: 5400.0, phase: 0.07}
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.physics.OrbitalSinusoid, channel: sa_mx_str3_current, amplitude: 0.05, period_s: 5400.0, phase: 0.12}
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.physics.OrbitalSinusoid, channel: sa_mx_str4_current, amplitude: 0.05, period_s: 5400.0, phase: 0.17}
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.physics.ConstantBaseline, channel: sa_mx_voltage, value: 31.8}
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.physics.OrbitalSinusoid, channel: sa_mx_voltage, amplitude: 0.4, period_s: 5400.0, phase: 0.05}
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.physics.OrbitalSinusoid, channel: sa_mx_sada_angle, amplitude: 3.14159, period_s: 5400.0, phase: 0.05}
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.physics.ConstantBaseline, channel: sa_mx_sada_motor_i, value: 0.08}
+
+  # ════════════════════════════════════════════════════════════════════
+  # L1 PHYSICS — Batteries (terminals, SoC, temps, cells)
+  # ════════════════════════════════════════════════════════════════════
+  # BAT_A SoC integrates eclipse charge/discharge
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.physics.BatterySoC, channel: bat_a_soc, capacity_Ah: 30.0, charge_rate_A: 2.5, discharge_rate_A: 4.0, initial_soc: 0.7}
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.physics.BatterySoC, channel: bat_b_soc, capacity_Ah: 30.0, charge_rate_A: 2.5, discharge_rate_A: 4.0, initial_soc: 0.72}
+  # Battery terminal voltage: ~28V nominal, mild SoC tracking via small orbital ripple
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.physics.ConstantBaseline, channel: bat_a_voltage, value: 28.5}
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.physics.OrbitalSinusoid, channel: bat_a_voltage, amplitude: 0.4, period_s: 5400.0, phase: 1.57}
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.physics.ConstantBaseline, channel: bat_b_voltage, value: 28.4}
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.physics.OrbitalSinusoid, channel: bat_b_voltage, amplitude: 0.4, period_s: 5400.0, phase: 1.57}
+  # Battery temps: small swings, thermal mass dominates
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.physics.ThermalDutyCycle, channel: bat_a_temp1, equilibrium_sun_C: 22.0, equilibrium_shade_C: 12.0, time_constant_s: 1800.0, initial_C: 18.0}
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.physics.ThermalDutyCycle, channel: bat_a_temp2, equilibrium_sun_C: 22.5, equilibrium_shade_C: 12.5, time_constant_s: 1800.0, initial_C: 18.0}
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.physics.ThermalDutyCycle, channel: bat_a_temp3, equilibrium_sun_C: 21.5, equilibrium_shade_C: 11.5, time_constant_s: 1800.0, initial_C: 17.5}
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.physics.ThermalDutyCycle, channel: bat_a_temp4, equilibrium_sun_C: 22.0, equilibrium_shade_C: 12.0, time_constant_s: 1800.0, initial_C: 18.0}
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.physics.ThermalDutyCycle, channel: bat_b_temp1, equilibrium_sun_C: 22.0, equilibrium_shade_C: 12.0, time_constant_s: 1800.0, initial_C: 18.0}
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.physics.ThermalDutyCycle, channel: bat_b_temp2, equilibrium_sun_C: 22.5, equilibrium_shade_C: 12.5, time_constant_s: 1800.0, initial_C: 18.0}
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.physics.ThermalDutyCycle, channel: bat_b_temp3, equilibrium_sun_C: 21.5, equilibrium_shade_C: 11.5, time_constant_s: 1800.0, initial_C: 17.5}
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.physics.ThermalDutyCycle, channel: bat_b_temp4, equilibrium_sun_C: 22.0, equilibrium_shade_C: 12.0, time_constant_s: 1800.0, initial_C: 18.0}
+  # Cell voltages: ~3.6V nominal each (8S Li-ion); minor offset across cells
+  # We set baseline only here; coupling section below ties them to SoC.
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.physics.ConstantBaseline, channel: bat_a_cell01_v, value: 3.61}
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.physics.ConstantBaseline, channel: bat_a_cell02_v, value: 3.62}
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.physics.ConstantBaseline, channel: bat_a_cell03_v, value: 3.60}
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.physics.ConstantBaseline, channel: bat_a_cell04_v, value: 3.59}
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.physics.ConstantBaseline, channel: bat_a_cell05_v, value: 3.62}
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.physics.ConstantBaseline, channel: bat_a_cell06_v, value: 3.60}
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.physics.ConstantBaseline, channel: bat_a_cell07_v, value: 3.61}
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.physics.ConstantBaseline, channel: bat_a_cell08_v, value: 3.62}
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.physics.ConstantBaseline, channel: bat_b_cell01_v, value: 3.60}
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.physics.ConstantBaseline, channel: bat_b_cell02_v, value: 3.61}
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.physics.ConstantBaseline, channel: bat_b_cell03_v, value: 3.59}
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.physics.ConstantBaseline, channel: bat_b_cell04_v, value: 3.60}
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.physics.ConstantBaseline, channel: bat_b_cell05_v, value: 3.61}
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.physics.ConstantBaseline, channel: bat_b_cell06_v, value: 3.62}
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.physics.ConstantBaseline, channel: bat_b_cell07_v, value: 3.60}
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.physics.ConstantBaseline, channel: bat_b_cell08_v, value: 3.61}
+
+  # ════════════════════════════════════════════════════════════════════
+  # L1 PHYSICS — PDU / PCU / Loads (baselines + small orbital effects)
+  # ════════════════════════════════════════════════════════════════════
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.physics.ConstantBaseline, channel: pdu_a_pri_v, value: 28.0}
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.physics.ConstantBaseline, channel: pdu_b_pri_v, value: 28.0}
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.physics.ConstantBaseline, channel: pdu_a_sec_v, value: 5.0}
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.physics.ConstantBaseline, channel: pdu_b_sec_v, value: 5.0}
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.physics.ConstantBaseline, channel: pdu_a_sec_i, value: 1.8}
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.physics.ConstantBaseline, channel: pdu_b_sec_i, value: 1.8}
+  # Per-PDU load baselines (loads on each redundant side)
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.physics.ConstantBaseline, channel: pdu_a_load1_i, value: 0.45}
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.physics.ConstantBaseline, channel: pdu_a_load2_i, value: 0.32}
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.physics.ConstantBaseline, channel: pdu_a_load3_i, value: 0.78}
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.physics.ConstantBaseline, channel: pdu_a_load4_i, value: 0.21}
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.physics.ConstantBaseline, channel: pdu_b_load1_i, value: 0.43}
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.physics.ConstantBaseline, channel: pdu_b_load2_i, value: 0.30}
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.physics.ConstantBaseline, channel: pdu_b_load3_i, value: 0.76}
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.physics.ConstantBaseline, channel: pdu_b_load4_i, value: 0.22}
+  # PDU/PCU internal temps — small swings
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.physics.ThermalDutyCycle, channel: pdu_a_temp, equilibrium_sun_C: 28.0, equilibrium_shade_C: 18.0, time_constant_s: 900.0, initial_C: 22.0}
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.physics.ThermalDutyCycle, channel: pdu_b_temp, equilibrium_sun_C: 28.0, equilibrium_shade_C: 18.0, time_constant_s: 900.0, initial_C: 22.0}
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.physics.ThermalDutyCycle, channel: pcu_a_temp, equilibrium_sun_C: 30.0, equilibrium_shade_C: 20.0, time_constant_s: 900.0, initial_C: 24.0}
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.physics.ThermalDutyCycle, channel: pcu_b_temp, equilibrium_sun_C: 30.0, equilibrium_shade_C: 20.0, time_constant_s: 900.0, initial_C: 24.0}
+  # PCU regulator baseline
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.physics.ConstantBaseline, channel: pcu_a_reg_v, value: 28.0}
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.physics.ConstantBaseline, channel: pcu_b_reg_v, value: 28.0}
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.physics.ConstantBaseline, channel: pcu_a_mppt_state, value: 1.0}
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.physics.ConstantBaseline, channel: pcu_b_mppt_state, value: 1.0}
+  # Loads baselines
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.physics.ConstantBaseline, channel: payload_power, value: 5.0}
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.physics.ConstantBaseline, channel: comms_tx_power, value: 1.2}
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.physics.ConstantBaseline, channel: heater_z1_i, value: 0.35}
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.physics.ConstantBaseline, channel: heater_z2_i, value: 0.30}
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.physics.ConstantBaseline, channel: obc_power, value: 8.5}
+
+  # ════════════════════════════════════════════════════════════════════
+  # L3 COUPLING — physical roll-ups
+  # ════════════════════════════════════════════════════════════════════
+  # Panel current = sum of its 4 cell strings
+  - _target_: dgx_ts_lab.datasets.synthetic.layered.coupling.SumCoupling
+    sources: [sa_px_str1_current, sa_px_str2_current, sa_px_str3_current, sa_px_str4_current]
+    target: sa_px_current
+  - _target_: dgx_ts_lab.datasets.synthetic.layered.coupling.SumCoupling
+    sources: [sa_mx_str1_current, sa_mx_str2_current, sa_mx_str3_current, sa_mx_str4_current]
+    target: sa_mx_current
+  # PDU primary bus current = sum of its representative loads + secondary bus draw
+  - _target_: dgx_ts_lab.datasets.synthetic.layered.coupling.SumCoupling
+    sources: [pdu_a_load1_i, pdu_a_load2_i, pdu_a_load3_i, pdu_a_load4_i, pdu_a_sec_i]
+    target: pdu_a_pri_i
+    offset: 0.5
+  - _target_: dgx_ts_lab.datasets.synthetic.layered.coupling.SumCoupling
+    sources: [pdu_b_load1_i, pdu_b_load2_i, pdu_b_load3_i, pdu_b_load4_i, pdu_b_sec_i]
+    target: pdu_b_pri_i
+    offset: 0.5
+  # PCU regulator current ≈ PDU primary current it feeds (1:1 for redundant pairing)
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.coupling.LinearCoupling, source: pdu_a_pri_i, target: pcu_a_reg_i, gain: 1.0}
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.coupling.LinearCoupling, source: pdu_b_pri_i, target: pcu_b_reg_i, gain: 1.0}
+  # Bus voltage sag under bus current (small effect)
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.coupling.InverseCoupling, source: pdu_a_pri_i, target: pdu_a_pri_v, gain: 0.06}
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.coupling.InverseCoupling, source: pdu_b_pri_i, target: pdu_b_pri_v, gain: 0.06}
+  # Payload power couples into one of PDU_A's loads
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.coupling.LinearCoupling, source: payload_power, target: pdu_a_load3_i, gain: 0.04}
+  # Comms TX into PDU_B load
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.coupling.LinearCoupling, source: comms_tx_power, target: pdu_b_load3_i, gain: 0.05}
+
+  # ════════════════════════════════════════════════════════════════════
+  # L4 NOISE — per-channel-type noise budgets
+  # ════════════════════════════════════════════════════════════════════
+  # Voltage channels: small Gaussian + pink
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.noise.GaussianNoise, channel: pdu_a_pri_v,  std: 0.02}
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.noise.GaussianNoise, channel: pdu_b_pri_v,  std: 0.02}
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.noise.GaussianNoise, channel: bat_a_voltage, std: 0.02}
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.noise.GaussianNoise, channel: bat_b_voltage, std: 0.02}
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.noise.GaussianNoise, channel: pcu_a_reg_v,  std: 0.015}
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.noise.GaussianNoise, channel: pcu_b_reg_v,  std: 0.015}
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.noise.PinkNoise,     channel: bat_a_voltage, std: 0.01}
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.noise.PinkNoise,     channel: bat_b_voltage, std: 0.01}
+  # Current channels: Gaussian + occasional Student-t for switching transients
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.noise.GaussianNoise, channel: pdu_a_pri_i, std: 0.02}
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.noise.GaussianNoise, channel: pdu_b_pri_i, std: 0.02}
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.noise.StudentTNoise, channel: pdu_a_pri_i, scale: 0.015, df: 4.0}
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.noise.StudentTNoise, channel: pdu_b_pri_i, scale: 0.015, df: 4.0}
+  # Panel temps: thermal sensors pink noise
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.noise.PinkNoise, channel: sa_px_temp_top, std: 0.3}
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.noise.PinkNoise, channel: sa_px_temp_mid, std: 0.3}
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.noise.PinkNoise, channel: sa_px_temp_bot, std: 0.3}
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.noise.PinkNoise, channel: sa_mx_temp_top, std: 0.3}
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.noise.PinkNoise, channel: sa_mx_temp_mid, std: 0.3}
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.noise.PinkNoise, channel: sa_mx_temp_bot, std: 0.3}
+  # Cell voltages: correlated common-mode noise within each battery
+  - _target_: dgx_ts_lab.datasets.synthetic.layered.noise.CorrelatedGaussianNoise
+    channels: [bat_a_cell01_v, bat_a_cell02_v, bat_a_cell03_v, bat_a_cell04_v, bat_a_cell05_v, bat_a_cell06_v, bat_a_cell07_v, bat_a_cell08_v]
+    covariance: [[0.001, 0.0007, 0.0007, 0.0007, 0.0007, 0.0007, 0.0007, 0.0007],
+                 [0.0007, 0.001, 0.0007, 0.0007, 0.0007, 0.0007, 0.0007, 0.0007],
+                 [0.0007, 0.0007, 0.001, 0.0007, 0.0007, 0.0007, 0.0007, 0.0007],
+                 [0.0007, 0.0007, 0.0007, 0.001, 0.0007, 0.0007, 0.0007, 0.0007],
+                 [0.0007, 0.0007, 0.0007, 0.0007, 0.001, 0.0007, 0.0007, 0.0007],
+                 [0.0007, 0.0007, 0.0007, 0.0007, 0.0007, 0.001, 0.0007, 0.0007],
+                 [0.0007, 0.0007, 0.0007, 0.0007, 0.0007, 0.0007, 0.001, 0.0007],
+                 [0.0007, 0.0007, 0.0007, 0.0007, 0.0007, 0.0007, 0.0007, 0.001]]
+  - _target_: dgx_ts_lab.datasets.synthetic.layered.noise.CorrelatedGaussianNoise
+    channels: [bat_b_cell01_v, bat_b_cell02_v, bat_b_cell03_v, bat_b_cell04_v, bat_b_cell05_v, bat_b_cell06_v, bat_b_cell07_v, bat_b_cell08_v]
+    covariance: [[0.001, 0.0007, 0.0007, 0.0007, 0.0007, 0.0007, 0.0007, 0.0007],
+                 [0.0007, 0.001, 0.0007, 0.0007, 0.0007, 0.0007, 0.0007, 0.0007],
+                 [0.0007, 0.0007, 0.001, 0.0007, 0.0007, 0.0007, 0.0007, 0.0007],
+                 [0.0007, 0.0007, 0.0007, 0.001, 0.0007, 0.0007, 0.0007, 0.0007],
+                 [0.0007, 0.0007, 0.0007, 0.0007, 0.001, 0.0007, 0.0007, 0.0007],
+                 [0.0007, 0.0007, 0.0007, 0.0007, 0.0007, 0.001, 0.0007, 0.0007],
+                 [0.0007, 0.0007, 0.0007, 0.0007, 0.0007, 0.0007, 0.001, 0.0007],
+                 [0.0007, 0.0007, 0.0007, 0.0007, 0.0007, 0.0007, 0.0007, 0.001]]
+  # Radiation event bursts on currents (cosmic-ray strikes)
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.noise.PoissonBurstNoise, channel: pdu_a_pri_i, event_rate_per_hour: 0.5, burst_size: 8, magnitude: 0.05}
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.noise.PoissonBurstNoise, channel: pdu_b_pri_i, event_rate_per_hour: 0.5, burst_size: 8, magnitude: 0.05}
+  # ADC quantization on bus voltage telemetry (12-bit)
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.noise.QuantizationNoise, channel: pdu_a_pri_v, n_bits: 12, full_scale: 32.0}
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.noise.QuantizationNoise, channel: pdu_b_pri_v, n_bits: 12, full_scale: 32.0}
+  # SADA angle: quantization (encoder)
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.noise.QuantizationNoise, channel: sa_px_sada_angle, n_bits: 14, full_scale: 6.5}
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.noise.QuantizationNoise, channel: sa_mx_sada_angle, n_bits: 14, full_scale: 6.5}
+  # Slow gain instability on a panel temp sensor (representative — only one to keep generation fast)
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.noise.MultiplicativeGainNoise, channel: sa_px_temp_mid, std: 0.005, time_constant_s: 1800.0}
+
+  # ════════════════════════════════════════════════════════════════════
+  # L5 NON-STATIONARITY — slow drifts representing real on-orbit life
+  # ════════════════════════════════════════════════════════════════════
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.drift.LinearDrift, channel: pdu_a_pri_v, drift_per_day: -0.005}
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.drift.LinearDrift, channel: pdu_b_pri_v, drift_per_day: -0.005}
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.drift.LinearDrift, channel: sa_px_current, drift_per_day: -0.0005}  # panel degradation
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.drift.LinearDrift, channel: sa_mx_current, drift_per_day: -0.0005}
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.drift.ExponentialAging, channel: bat_a_soc, final_fraction: 0.97, time_constant_days: 7.0}
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.drift.ExponentialAging, channel: bat_b_soc, final_fraction: 0.97, time_constant_days: 7.0}
+
+  # ════════════════════════════════════════════════════════════════════
+  # L6 FAULTS — labeled anomalies
+  # ════════════════════════════════════════════════════════════════════
+  # Bus transients
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.faults.PointFault, channel: pdu_a_pri_v, rate_per_hour: 0.5, magnitude: 0.6}
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.faults.PointFault, channel: pdu_b_pri_v, rate_per_hour: 0.5, magnitude: 0.6}
+  # Telemetry dropouts on a few cell voltages
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.faults.DropoutFault, channel: bat_a_cell04_v, rate_per_hour: 0.3, min_duration_s: 2.0, max_duration_s: 8.0, fill_value: 0.0}
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.faults.DropoutFault, channel: bat_b_cell06_v, rate_per_hour: 0.3, min_duration_s: 2.0, max_duration_s: 8.0, fill_value: 0.0}
+  # String dropout (cell string damage from radiation event)
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.faults.DropoutFault, channel: sa_px_str2_current, rate_per_hour: 0.2, min_duration_s: 5.0, max_duration_s: 30.0, fill_value: 0.0}
+  # SADA encoder stuck
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.faults.StuckAtFault, channel: sa_px_sada_angle, rate_per_day: 1.0, min_duration_s: 60.0, max_duration_s: 300.0}
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.faults.StuckAtFault, channel: sa_mx_sada_angle, rate_per_day: 1.0, min_duration_s: 60.0, max_duration_s: 300.0}
+  # Battery temp sensor calibration drift
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.faults.DriftFault, channel: bat_a_temp2, rate_per_day: 0.8, ramp_duration_s: 600.0, final_offset: 3.0}
+  # Cell imbalance: one cell drifts low (persistent)
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.faults.DriftFault, channel: bat_a_cell03_v, rate_per_day: 0.5, ramp_duration_s: 1800.0, final_offset: -0.15, persist: true}
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.faults.DriftFault, channel: bat_b_cell07_v, rate_per_day: 0.5, ramp_duration_s: 1800.0, final_offset: -0.15, persist: true}
+  # Bus undervoltage oscillation (control loop instability)
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.faults.OscillationFault, channel: pdu_a_pri_v, rate_per_day: 0.5, frequency_hz: 0.3, amplitude: 0.5, duration_s: 90.0}
+  # Correlation break: a cell decorrelates from its peers
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.faults.CorrelationBreakFault, channel: bat_a_cell05_v, reference_channel: bat_a_cell01_v, rate_per_day: 0.3, divergence_std: 0.05, duration_s: 600.0}
+  # Cross-strap switchover: a representative PDU load steps to a different level
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.drift.RegimeChange, channel: pdu_a_load4_i, step_time_s: 64800.0, step_magnitude: 0.15}
+  # Mode-confusion: payload draws power during eclipse (when it should be idle)
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.faults.ModeConfusionFault, channel: payload_power, rate_per_day: 0.5, wrong_value: 12.0, duration_s: 120.0, only_when_mode: eclipse}

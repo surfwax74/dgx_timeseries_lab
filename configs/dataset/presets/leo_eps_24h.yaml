@@ -1,0 +1,102 @@
+# 24-hour LEO EPS-subsystem preset for the layered synthetic generator.
+#
+# Six channels modeling a typical electrical power subsystem:
+#   bus_voltage, bus_current, battery_soc,
+#   panel_temp_x, panel_temp_y, payload_power
+#
+# Stack exercises every layer:
+#   L1 physics:    OrbitalSinusoid, ThermalDutyCycle, BatterySoC
+#   L2 modes:      ModeMachine (sun/eclipse + Poisson payload activations)
+#   L3 coupling:   LinearCoupling (payload power → bus current); InverseCoupling (current → voltage sag)
+#   L4 noise:      Gaussian + Pink + StudentT + Quantization + PoissonBurst + MultiplicativeGain
+#   L5 drift:      LinearDrift on bus_voltage; ExponentialAging on battery_soc
+#   L6 faults:     Point, Dropout, StuckAt, Drift, Oscillation, CorrelationBreak
+#
+# This file lives at configs/dataset/presets/ so it can be selected via
+#   `defaults: - override /dataset: presets/leo_eps_24h`
+# in an experiment YAML. Its top-level fields ARE the dataset config block.
+
+_target_key: layered_synth
+n_samples: 86400
+sample_rate_hz: 1.0
+seed: 42
+name: leo_eps_24h
+subsystem: eps
+
+channels:
+  - {name: bus_voltage,    units: V,    subsystem: eps,     sample_rate_hz: 1.0, description: "Primary 28V bus voltage"}
+  - {name: bus_current,    units: A,    subsystem: eps,     sample_rate_hz: 1.0, description: "Total bus current draw"}
+  - {name: battery_soc,    units: pct,  subsystem: eps,     sample_rate_hz: 1.0, description: "Battery state of charge (0-1)"}
+  - {name: panel_temp_x,   units: degC, subsystem: tcs,     sample_rate_hz: 1.0, description: "Solar panel +X temperature"}
+  - {name: panel_temp_y,   units: degC, subsystem: tcs,     sample_rate_hz: 1.0, description: "Solar panel +Y temperature"}
+  - {name: payload_power,  units: W,    subsystem: payload, sample_rate_hz: 1.0, description: "Payload instantaneous power"}
+
+components:
+  # ── L2 modes (FIRST so downstream physics can branch on them) ────
+  - _target_: dgx_ts_lab.datasets.synthetic.layered.modes.ModeMachine
+    period_s: 5400.0
+    eclipse_fraction: 0.35
+    payload_active_rate_per_hour: 0.8
+    payload_duration_s: 600.0
+
+  # ── L1 physics ────────────────────────────────────────────────
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.physics.OrbitalSinusoid,
+     channel: bus_voltage, amplitude: 0.3, period_s: 5400.0, baseline: 28.0}
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.physics.BatterySoC,
+     channel: battery_soc, capacity_Ah: 30.0, charge_rate_A: 2.5,
+     discharge_rate_A: 4.0, initial_soc: 0.7}
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.physics.ThermalDutyCycle,
+     channel: panel_temp_x, equilibrium_sun_C: 55.0, equilibrium_shade_C: -40.0,
+     time_constant_s: 600.0, initial_C: 20.0}
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.physics.ThermalDutyCycle,
+     channel: panel_temp_y, equilibrium_sun_C: 50.0, equilibrium_shade_C: -42.0,
+     time_constant_s: 650.0, initial_C: 18.0}
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.physics.OrbitalSinusoid,
+     channel: payload_power, amplitude: 0.0, period_s: 5400.0, baseline: 5.0}
+
+  # ── L3 coupling (payload power → bus current; current → voltage sag) ──
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.coupling.LinearCoupling,
+     source: payload_power, target: bus_current, gain: 0.04, offset: 1.2}
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.coupling.InverseCoupling,
+     source: bus_current, target: bus_voltage, gain: 0.05}
+
+  # ── L4 multi-distribution noise (the headline) ───────────────
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.noise.GaussianNoise,
+     channel: bus_voltage, std: 0.02}
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.noise.PinkNoise,
+     channel: bus_voltage, std: 0.01}
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.noise.StudentTNoise,
+     channel: bus_current, scale: 0.02, df: 4.0}
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.noise.PinkNoise,
+     channel: panel_temp_x, std: 0.3}
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.noise.PinkNoise,
+     channel: panel_temp_y, std: 0.3}
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.noise.PoissonBurstNoise,
+     channel: bus_current, event_rate_per_hour: 0.5, burst_size: 8, magnitude: 0.1}
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.noise.QuantizationNoise,
+     channel: bus_voltage, n_bits: 12, full_scale: 32.0}
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.noise.MultiplicativeGainNoise,
+     channel: panel_temp_x, std: 0.005, time_constant_s: 1800.0}
+
+  # ── L5 non-stationarity ───────────────────────────────────────
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.drift.LinearDrift,
+     channel: bus_voltage, drift_per_day: -0.005}
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.drift.ExponentialAging,
+     channel: battery_soc, final_fraction: 0.97, time_constant_days: 7.0}
+
+  # ── L6 fault injection ───────────────────────────────────────
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.faults.PointFault,
+     channel: bus_voltage, rate_per_hour: 1.0, magnitude: 0.5}
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.faults.DropoutFault,
+     channel: bus_current, rate_per_hour: 0.5, min_duration_s: 2.0,
+     max_duration_s: 8.0, fill_value: 0.0}
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.faults.StuckAtFault,
+     channel: panel_temp_x, rate_per_day: 1.5, min_duration_s: 60.0, max_duration_s: 300.0}
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.faults.DriftFault,
+     channel: panel_temp_y, rate_per_day: 1.0, ramp_duration_s: 600.0, final_offset: 4.0}
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.faults.OscillationFault,
+     channel: bus_current, rate_per_day: 0.8, frequency_hz: 0.25,
+     amplitude: 0.4, duration_s: 90.0}
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.faults.CorrelationBreakFault,
+     channel: panel_temp_x, reference_channel: panel_temp_y,
+     rate_per_day: 0.5, divergence_std: 5.0, duration_s: 600.0}

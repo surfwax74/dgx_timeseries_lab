@@ -1,0 +1,17 @@
+# @package _global_
+# Phase 1 acceptance: rolling-mean baseline against the layered LEO EPS
+# 24-hour synthetic dataset. The detector won't crush this (it's hard —
+# multi-distribution noise + 6 fault types + drift), but it should run
+# end-to-end and produce non-trivial scores + an MLflow run with the
+# fault_log artifact.
+
+defaults:
+  - override /dataset: presets/leo_eps_24h
+  - override /model: rolling_mean
+  - override /trainer: single_cpu
+
+mode: zeroshot
+
+mlflow:
+  experiment_name: phase1_layered
+  run_name: rolling_mean_on_leo_eps_24h

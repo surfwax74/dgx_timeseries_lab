@@ -1,0 +1,16 @@
+# CPU-only trainer. Use for: smoke tests, CI, dev when no GPU available.
+# Realistic model ceiling: ~5M params, window <= 256, batch <= 16.
+_target_key: lightning
+
+max_epochs: 2
+batch_size: 16
+window_length: 128
+window_stride: 128
+learning_rate: 0.0005
+seed: 0
+device: cpu
+precision: 32-true
+strategy: auto
+num_workers: 0
+checkpoint_dir: checkpoints
+extra: {}

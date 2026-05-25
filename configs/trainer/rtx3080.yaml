@@ -1,0 +1,19 @@
+# Single RTX 3080 (10–12 GB). Workstation tier.
+# Realistic model ceiling: ~50M params dense fp32, ~150M with bf16-mixed.
+# Recommended for Phase 2 from-scratch detectors + Chronos-small LoRA.
+_target_key: lightning
+
+max_epochs: 20
+batch_size: 32
+window_length: 256
+window_stride: 128
+learning_rate: 0.0003
+seed: 0
+device: cuda
+precision: bf16-mixed   # RTX 3080 (Ampere) supports bf16
+strategy: auto
+num_workers: 4
+checkpoint_dir: checkpoints
+extra:
+  grad_clip_norm: 1.0
+  log_every_n_steps: 20

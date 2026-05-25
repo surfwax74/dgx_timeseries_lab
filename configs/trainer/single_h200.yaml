@@ -1,0 +1,13 @@
+_target_key: lightning
+
+max_epochs: 50
+batch_size: 256
+window_length: 512
+window_stride: 256
+learning_rate: 0.0003
+seed: 0
+device: cuda
+precision: bf16-mixed
+strategy: auto
+num_workers: 8
+checkpoint_dir: checkpoints

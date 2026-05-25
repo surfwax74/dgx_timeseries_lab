@@ -1,0 +1,11 @@
+_target_key: patchtst_mae
+
+window_length: 256
+patch_len: 16
+d_model: 128
+n_heads: 4
+n_layers: 3
+d_ff: 256
+dropout: 0.1
+mask_ratio: 0.4  # upper bound — per-batch ratio sampled from U(0, mask_ratio)
+# n_channels: null — inferred from dataset at fit time

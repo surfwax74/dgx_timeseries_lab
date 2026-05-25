@@ -1,0 +1,7 @@
+# Chronos zero-shot (no fine-tuning, just calibrate threshold on val).
+_target_key: chronos
+
+model: amazon/chronos-t5-tiny
+window_length: 256
+n_quantile_bins: 4096
+# n_channels: null — inferred at fit time

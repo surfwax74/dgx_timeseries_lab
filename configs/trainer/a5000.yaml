@@ -1,0 +1,19 @@
+# Single A5000 (24 GB). Workstation/server tier.
+# Realistic model ceiling: ~200M params with bf16-mixed; ~50M dense fp32.
+# Recommended for Chronos-base / MOMENT-small LoRA, Sat-TSFM small.
+_target_key: lightning
+
+max_epochs: 40
+batch_size: 64
+window_length: 512
+window_stride: 256
+learning_rate: 0.0002
+seed: 0
+device: cuda
+precision: bf16-mixed
+strategy: auto
+num_workers: 8
+checkpoint_dir: checkpoints
+extra:
+  grad_clip_norm: 1.0
+  log_every_n_steps: 50

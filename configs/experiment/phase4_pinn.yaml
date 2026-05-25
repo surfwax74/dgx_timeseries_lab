@@ -1,0 +1,39 @@
+# @package _global_
+# Phase 4 PINN bake-off — neural detector vs PINN-wrapped detector.
+# Tests whether subtracting analytical physics from the input improves AD.
+defaults:
+  - override /trainer: a5000
+
+trainer:
+  max_epochs: 5
+  batch_size: 32
+  window_length: 256
+
+suite:
+  name: phase4_pinn_bakeoff
+  mode: pretrain
+
+  detectors:
+    - {key: rolling_mean, params: {}}
+    - {key: patchtst_mae, params: {window_length: 256, patch_len: 16, d_model: 64, n_layers: 2, n_heads: 2}}
+    - key: pinn_residual
+      params:
+        inner: {_target_key: patchtst_mae, window_length: 256, patch_len: 16, d_model: 64, n_layers: 2, n_heads: 2}
+        physics: {_target_key: orbital, period_s: 5400.0, eclipse_fraction: 0.35}
+    - key: pinn_residual
+      params:
+        inner: {_target_key: patchtst_mae, window_length: 256, patch_len: 16, d_model: 64, n_layers: 2, n_heads: 2}
+        physics: {_target_key: thermal, period_s: 5400.0, eclipse_fraction: 0.35}
+    - key: pinn_residual
+      params:
+        inner: {_target_key: patchtst_mae, window_length: 256, patch_len: 16, d_model: 64, n_layers: 2, n_heads: 2}
+        physics: {_target_key: battery, period_s: 5400.0, eclipse_fraction: 0.35}
+
+  datasets:
+    - key: parquet_telemetry
+      params:
+        data_path: data/synth/leo_eps_full_24h
+
+  seeds: [0]
+
+output_dir: benchmark_reports

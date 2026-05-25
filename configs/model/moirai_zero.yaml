@@ -1,0 +1,5 @@
+# Moirai is multivariate-native. Requires `uni2ts` package + weights.
+_target_key: moirai
+
+model: Salesforce/moirai-1.0-R-small
+window_length: 256

@@ -216,3 +216,47 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# ──────────────────────────────────────────────────────────────────────
+# dgx_timeseries_lab project-specific
+# ──────────────────────────────────────────────────────────────────────
+
+# Datasets (symlinked from NAS on DGX; never checked in)
+data/
+
+# MLflow tracking (kept local per-machine)
+mlruns/
+mlartifacts/
+
+# Lightning / training artifacts
+lightning_logs/
+checkpoints/
+*.ckpt
+*.pt
+*.safetensors
+
+# Hydra outputs
+outputs/
+multirun/
+.hydra/
+
+# Exported model artifacts (per-experiment, regenerable)
+*.onnx
+experiments/*/artifacts/
+experiments/*/mlruns/
+
+# uv
+.uv/
+
+# Generated benchmark reports + ad-hoc logs + ephemeral mlflow databases
+benchmark_reports/
+*.log
+mlflow.db
+mlflow.db-journal
+mlflow_registry/
+
+# Triton model store (regenerable via `dgx-ts export +write_triton=true`)
+triton_models/
+
+# Phase 5 exported artifacts (regenerable via `dgx-ts export`)
+exported/

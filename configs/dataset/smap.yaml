@@ -1,0 +1,10 @@
+# NASA SMAP single-channel loader.
+# Air-gap: requires files at data_root — see configs/dataset/README.md +
+# docs/air_gapped_setup.md for how to provision them.
+_target_key: nasa_smap_channel
+
+data_root: data/nasa_smap
+channel_id: A-1               # any chan_id present in labeled_anomalies.csv
+spacecraft: SMAP
+include_commands: false
+sample_rate_hz: 1.0

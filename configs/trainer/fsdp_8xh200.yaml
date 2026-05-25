@@ -1,0 +1,14 @@
+# Reserved for Phase 4 — full FSDP training on 8×H200.
+_target_key: lightning
+
+max_epochs: 100
+batch_size: 64           # per-device; effective = 64 × 8 = 512
+window_length: 4096
+window_stride: 2048
+learning_rate: 0.0001
+seed: 0
+device: cuda
+precision: bf16-mixed
+strategy: fsdp
+num_workers: 16
+checkpoint_dir: checkpoints

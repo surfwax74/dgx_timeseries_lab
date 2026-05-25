@@ -1,0 +1,28 @@
+# @package _global_
+# Phase 4 Subsystem MoE — compare to flat PatchTST+MAE on the same data.
+# Shows that subsystem-aware routing improves over channel-independent baseline.
+defaults:
+  - override /trainer: a5000
+
+trainer:
+  max_epochs: 5
+  batch_size: 32
+  window_length: 256
+
+suite:
+  name: phase4_moe_bakeoff
+  mode: pretrain
+
+  detectors:
+    - {key: rolling_mean, params: {}}
+    - {key: patchtst_mae, params: {window_length: 256, patch_len: 16, d_model: 128, n_layers: 3, n_heads: 4}}
+    - {key: subsystem_moe, params: {window_length: 256, patch_len: 16, d_model: 128, n_layers: 3, n_heads: 4}}
+
+  datasets:
+    - key: parquet_telemetry
+      params:
+        data_path: data/synth/leo_eps_full_24h
+
+  seeds: [0]
+
+output_dir: benchmark_reports

@@ -1,0 +1,9 @@
+# NASA MSL single-channel loader.
+# Air-gap: requires files at data_root.
+_target_key: nasa_msl_channel
+
+data_root: data/nasa_msl
+channel_id: M-1               # any chan_id present in labeled_anomalies.csv
+spacecraft: MSL
+include_commands: false
+sample_rate_hz: 1.0

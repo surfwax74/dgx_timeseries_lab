@@ -1,0 +1,19 @@
+# Eight A5000s (24 GB each = 192 GB pooled).
+# DDP for models <= 200M; FSDP for 200M – 1B.
+# Recommended for Sat-TSFM medium (200M) DDP, large (500M) FSDP.
+_target_key: lightning
+
+max_epochs: 60
+batch_size: 64              # per-device; effective = 64 * 8 = 512
+window_length: 1024
+window_stride: 512
+learning_rate: 0.0002
+seed: 0
+device: cuda
+precision: bf16-mixed
+strategy: fsdp              # switch to "ddp" for models <= 200M
+num_workers: 8
+checkpoint_dir: checkpoints
+extra:
+  grad_clip_norm: 1.0
+  log_every_n_steps: 50

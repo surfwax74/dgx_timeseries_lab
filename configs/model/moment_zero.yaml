@@ -1,0 +1,6 @@
+_target_key: moment
+
+model: AutonLab/MOMENT-1-small
+window_length: 256
+patch_len: 8
+d_model: 64

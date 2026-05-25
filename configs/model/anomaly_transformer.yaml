@@ -1,0 +1,10 @@
+_target_key: anomaly_transformer
+
+window_length: 256
+d_model: 128
+n_heads: 4
+n_layers: 3
+d_ff: 256
+dropout: 0.1
+lambda_disc: 3.0
+# n_channels: null — inferred from dataset

@@ -1,0 +1,10 @@
+# Subsystem MoE — shared trunk + per-subsystem expert heads.
+_target_key: subsystem_moe
+window_length: 256
+patch_len: 16
+d_model: 128
+n_heads: 4
+n_layers: 3
+d_ff: 256
+dropout: 0.1
+expert_hidden: 256

@@ -1,0 +1,6 @@
+_target_key: dcdetector
+
+window_length: 256
+patch_len: 16
+d_model: 64
+# n_channels: null — inferred from dataset

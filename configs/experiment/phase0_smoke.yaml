@@ -1,0 +1,15 @@
+# @package _global_
+# Phase 0 acceptance test: rolling-mean baseline against trivial synthetic data
+# on CPU. Should complete in well under 2 minutes and produce a non-zero
+# val_metrics.f1 (the injected spikes are easy z-score targets).
+
+defaults:
+  - override /dataset: trivial_synth
+  - override /model: rolling_mean
+  - override /trainer: single_cpu
+
+mode: zeroshot   # rolling_mean doesn't need a training loop
+
+mlflow:
+  experiment_name: phase0_smoke
+  run_name: rolling_mean_on_trivial_synth

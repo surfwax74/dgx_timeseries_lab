@@ -1,0 +1,36 @@
+[project]
+name = "dgx-timeseries-lab"
+version = "0.1.0"
+description = "Satellite telemetry anomaly detection experiments on DGX H200"
+requires-python = ">=3.12"
+dependencies = [
+    "dgx-ts-core",
+    "dgx-ts-lab",
+]
+
+[tool.uv.workspace]
+members = ["packages/*"]
+
+[tool.uv.sources]
+dgx-ts-core = { workspace = true }
+dgx-ts-lab = { workspace = true }
+
+[dependency-groups]
+dev = [
+    "pytest>=8",
+    "pytest-cov>=5",
+    "ruff>=0.7",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "N", "SIM"]
+ignore = ["E501"]
+
+[tool.pytest.ini_options]
+testpaths = ["packages"]
+python_files = ["test_*.py"]
+addopts = "-ra --strict-markers --import-mode=importlib"

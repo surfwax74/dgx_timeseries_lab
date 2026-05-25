@@ -1,0 +1,6 @@
+# Chronos with LoRA fine-tuning of Q/V projections.
+_target_key: chronos
+
+model: amazon/chronos-t5-tiny
+window_length: 256
+n_quantile_bins: 4096

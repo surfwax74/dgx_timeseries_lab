@@ -1,0 +1,13 @@
+# @package _global_
+# Phase 4 scale training: Sat-TSFM from scratch.
+# Default tier: H200 FSDP. Override trainer for smaller boxes.
+defaults:
+  - override /dataset: presets/leo_eps_full_24h
+  - override /model: sat_tsfm_medium
+  - override /trainer: h200_fsdp_8x
+
+mode: pretrain
+
+mlflow:
+  experiment_name: phase4_scale
+  run_name: sat_tsfm_medium_h200_fsdp
