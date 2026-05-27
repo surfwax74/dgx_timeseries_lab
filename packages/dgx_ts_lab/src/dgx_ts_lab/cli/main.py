@@ -14,13 +14,17 @@ _USAGE = """dgx-ts <subcommand> [hydra-style overrides]
 
 Subcommands:
   train      Fit a detector against a dataset (Phase 0+)
-  eval       Run a detector against a dataset, report metrics (Phase 2)
   benchmark  Run the bake-off across multiple detectors (Phase 2)
   synth      Generate synthetic telemetry datasets to disk (Phase 1)
   export     Emit ONNX + model_card + feature_schema for MLOps lift (Phase 5)
+  explain    Produce per-window root-cause explanation reports (Phase 7)
+  copilot    Interactive LLM ops co-pilot REPL (Phase 11)
+  viz        Render ROC / PR / AUC plots from a benchmark output dir
+  eval       Run a detector against a dataset, report metrics (Phase 2)
 
 Example:
   dgx-ts train experiment=phase0_smoke
+  dgx-ts copilot --backend mock
 """
 
 
@@ -52,6 +56,24 @@ def main() -> None:
 
     if subcommand == "export":
         from .export import run
+
+        run()
+        return
+
+    if subcommand == "explain":
+        from .explain import run
+
+        run()
+        return
+
+    if subcommand == "copilot":
+        from .copilot import run
+
+        run()
+        return
+
+    if subcommand == "viz":
+        from .visualize import run
 
         run()
         return

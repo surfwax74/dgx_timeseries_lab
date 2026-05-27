@@ -77,25 +77,48 @@ def test_patchtst_compute_score_batch_shape() -> None:
     assert scores.shape == (5, WINDOW)
 
 
-def test_patchtst_mask_ratio_varies_across_batches() -> None:
-    """Per-batch ratio must be randomized, otherwise the encoder never sees
-    low-/no-mask inputs and eval suffers a train/eval distribution shift
-    (the bug that exploded val_loss on the LEO EPS preset)."""
+def test_random_mask_honors_ratio_argument() -> None:
+    """Deterministic contract: `_random_mask(ratio=r)` must mask exactly
+    ``N - max(1, int(N*(1-r)))`` patches per row. This is what `forward`
+    relies on when it samples a per-batch ratio."""
+    det = PatchTSTMAEDetector(
+        window_length=WINDOW, patch_len=PATCH, d_model=32, n_layers=1, n_heads=2,
+    )
+    det.fit(_tiny_dataset(), FitMode.PRETRAIN, {})
+    assert det.module is not None
+    N = det.module.n_patches
+    for ratio in (0.0, 0.25, 0.5, 0.75):
+        expected = N - max(1, int(N * (1.0 - ratio)))
+        mask = det.module._random_mask(BC=8, ratio=ratio, device=torch.device("cpu"))
+        assert mask.shape == (8, N)
+        per_row = mask.sum(dim=1)
+        assert (per_row == expected).all(), (
+            f"ratio={ratio}: expected {expected} masked per row, got {per_row.tolist()}"
+        )
+
+
+def test_patchtst_forward_samples_ratio_per_batch() -> None:
+    """Regression for the val_loss-explosion bug: `forward(apply_mask=True)`
+    must sample a fresh ratio each call. If the ratio were fixed at
+    `mask_ratio`, the encoder would never see low-/no-mask inputs and eval
+    (apply_mask=False) would hit a train/eval distribution shift.
+
+    No `torch.manual_seed` here on purpose — we're testing that the model is
+    non-deterministic across batches. Across 50 trials, P(all-equal under
+    the fix) < 1e-25, so a single distinct value is a real regression."""
     det = PatchTSTMAEDetector(
         window_length=WINDOW, patch_len=PATCH, d_model=32, n_layers=1,
         n_heads=2, mask_ratio=0.8,
     )
     det.fit(_tiny_dataset(), FitMode.PRETRAIN, {})
     assert det.module is not None
-    torch.manual_seed(0)
-    densities: set[int] = set()
-    for _ in range(20):
+    counts: set[int] = set()
+    for _ in range(50):
         x = torch.randn(2, WINDOW, 3, dtype=torch.float32)
         _, mask = det.module(x, apply_mask=True)
         assert mask is not None
-        densities.add(int(mask.float().mean().item() * 100))
-    # 20 draws from U(0, 0.8) almost surely span >=3 distinct density buckets.
-    assert len(densities) >= 3, f"mask ratio looks constant: {densities}"
+        counts.add(int(mask.sum().item()))
+    assert len(counts) > 1, f"mask total constant across 50 batches: {counts}"
 
 
 def test_patchtst_compute_loss_finite_when_ratio_collapses_to_zero() -> None:

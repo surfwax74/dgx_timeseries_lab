@@ -99,6 +99,51 @@ class SatTSFMModule(nn.Module):
         self.register_buffer("norm_mean", torch.zeros(self.max_channels))
         self.register_buffer("norm_std", torch.ones(self.max_channels))
 
+    def encode(
+        self, x: torch.Tensor, channel_ids: torch.Tensor | None = None
+    ) -> tuple[torch.Tensor, int, int, int]:
+        """Run the encoder up to (but not including) the forecast head.
+
+        Returns ``(encoded, B, C, n_patches)`` where ``encoded`` has shape
+        ``(B, C*N, D)``. Used by ``forward`` for reconstruction AND by
+        multi-task task heads that need per-step embeddings.
+        """
+        B, T, C = x.shape
+        if channel_ids is None:
+            channel_ids = torch.arange(C, device=x.device, dtype=torch.long)
+        mean = self.norm_mean[channel_ids].view(1, 1, C)
+        std = self.norm_std[channel_ids].view(1, 1, C)
+        x_norm = (x - mean) / std
+
+        T_trunc = self.n_patches * self.patch_len
+        x_p = x_norm[:, :T_trunc, :].permute(0, 2, 1).contiguous()
+        patches = x_p.reshape(B, C, self.n_patches, self.patch_len)
+
+        emb = self.patch_embed(patches)
+        emb = emb + self.time_emb.unsqueeze(1)
+        ch_emb = self.channel_emb(channel_ids).view(1, C, 1, self.d_model)
+        emb = emb + ch_emb
+        flat = emb.reshape(B, C * self.n_patches, self.d_model)
+        encoded = self.encoder(flat)
+        return encoded, B, C, self.n_patches
+
+    def encode_pooled_steps(
+        self, x: torch.Tensor, channel_ids: torch.Tensor | None = None
+    ) -> torch.Tensor:
+        """Per-step channel-pooled embeddings for multi-task heads.
+
+        Returns ``(B, T_trunc, D)`` where ``T_trunc = n_patches *
+        patch_len``. Each patch's embedding is broadcast to its
+        ``patch_len`` constituent timesteps; channel dimension is
+        mean-pooled. This is the input multi-task heads consume.
+        """
+        encoded, B, C, N = self.encode(x, channel_ids)         # (B, C*N, D)
+        # (B, C, N, D) → mean over C → (B, N, D)
+        per_patch = encoded.reshape(B, C, N, self.d_model).mean(dim=1)
+        # Broadcast each patch to its patch_len steps → (B, N, patch_len, D) → (B, T_trunc, D)
+        per_step = per_patch.unsqueeze(2).expand(B, N, self.patch_len, self.d_model)
+        return per_step.reshape(B, N * self.patch_len, self.d_model)
+
     def forward(
         self, x: torch.Tensor, channel_ids: torch.Tensor | None = None
     ) -> torch.Tensor:
@@ -107,33 +152,12 @@ class SatTSFMModule(nn.Module):
         ``channel_ids``: (C,) long tensor mapping dataset channels to
         embedding-table indices. Defaults to identity if not provided.
         """
-        B, T, C = x.shape
-        if channel_ids is None:
-            channel_ids = torch.arange(C, device=x.device, dtype=torch.long)
-        # Normalize per channel (using the channels' norm buffers)
-        mean = self.norm_mean[channel_ids].view(1, 1, C)
-        std = self.norm_std[channel_ids].view(1, 1, C)
-        x_norm = (x - mean) / std
-
-        # Patchify: (B, T, C) → (B, C, N, P)
-        T_trunc = self.n_patches * self.patch_len
-        x_p = x_norm[:, :T_trunc, :].permute(0, 2, 1).contiguous()
-        patches = x_p.reshape(B, C, self.n_patches, self.patch_len)
-
-        # Embed patches: (B, C, N, D)
-        emb = self.patch_embed(patches)
-        # Add time embedding (broadcast over channels): (1, 1, N, D)
-        emb = emb + self.time_emb.unsqueeze(1)
-        # Add channel embedding: (1, C, 1, D)
-        ch_emb = self.channel_emb(channel_ids).view(1, C, 1, self.d_model)
-        emb = emb + ch_emb
-        # Flatten to (B, C*N, D) for joint attention
-        flat = emb.reshape(B, C * self.n_patches, self.d_model)
-
-        encoded = self.encoder(flat)                      # (B, C*N, D)
+        T = x.shape[1]
+        encoded, B, C, N = self.encode(x, channel_ids)
+        T_trunc = N * self.patch_len
         recon_patches = self.forecast_head(encoded)       # (B, C*N, P)
         # Reshape back to (B, C, N, P) then to (B, T, C)
-        recon = recon_patches.reshape(B, C, self.n_patches, self.patch_len)
+        recon = recon_patches.reshape(B, C, N, self.patch_len)
         recon = recon.reshape(B, C, T_trunc).permute(0, 2, 1).contiguous()
 
         # Pad to original T if truncated

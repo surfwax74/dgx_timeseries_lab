@@ -66,16 +66,20 @@ class LightningTrainer:
             )
             val_metrics: dict[str, float] = {}
             test_metrics: dict[str, float] = {}
+            val_arrays: dict[str, np.ndarray] = {}
+            test_arrays: dict[str, np.ndarray] = {}
             if val_ds.has_labels:
                 v = _score_dataset(
                     detector, val_ds, config.window_length, config.window_stride
                 )
                 val_metrics = basic_metrics(v["labels"], v["scores"], threshold)
+                val_arrays = v
             if test_ds.has_labels:
                 te = _score_dataset(
                     detector, test_ds, config.window_length, config.window_stride
                 )
                 test_metrics = basic_metrics(te["labels"], te["scores"], threshold)
+                test_arrays = te
             return FitResult(
                 detector_name=fit_result.detector_name,
                 mode=fit_result.mode,
@@ -87,6 +91,8 @@ class LightningTrainer:
                     "threshold": threshold,
                     "val_metrics": val_metrics,
                     "test_metrics": test_metrics,
+                    "val_arrays": val_arrays,
+                    "test_arrays": test_arrays,
                 },
             )
 
@@ -102,12 +108,16 @@ class LightningTrainer:
         # Eval on val + test if labels are available.
         val_metrics: dict[str, float] = {}
         test_metrics: dict[str, float] = {}
+        val_arrays: dict[str, np.ndarray] = {}
+        test_arrays: dict[str, np.ndarray] = {}
         if val_ds.has_labels:
             v = _score_dataset(detector, val_ds, config.window_length, config.window_stride)
             val_metrics = basic_metrics(v["labels"], v["scores"], threshold)
+            val_arrays = v
         if test_ds.has_labels:
             te = _score_dataset(detector, test_ds, config.window_length, config.window_stride)
             test_metrics = basic_metrics(te["labels"], te["scores"], threshold)
+            test_arrays = te
 
         return FitResult(
             detector_name=fit_result.detector_name,
@@ -120,6 +130,8 @@ class LightningTrainer:
                 "threshold": threshold,
                 "val_metrics": val_metrics,
                 "test_metrics": test_metrics,
+                "val_arrays": val_arrays,
+                "test_arrays": test_arrays,
             },
         )
 

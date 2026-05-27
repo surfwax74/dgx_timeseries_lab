@@ -27,6 +27,8 @@ class WindowTorchDataset(Dataset):
         self._length = int(length)
         self._stride = int(stride)
         self._name = dataset.name
+        # Stash for Phase 6 aux_labels passthrough on the fast path.
+        self._dataset = dataset
 
         # Fast path: underlying dense arrays
         if hasattr(dataset, "_data"):
@@ -57,7 +59,11 @@ class WindowTorchDataset(Dataset):
                 labels = torch.from_numpy(self._labels[start:end].copy()).bool()
             else:
                 labels = torch.zeros(self._length, dtype=torch.bool)
-            return {"x": x, "labels": labels}
+            out: dict[str, torch.Tensor] = {"x": x, "labels": labels}
+            aux = self._aux_labels_for(start, self._length)
+            if aux is not None:
+                out["aux_labels"] = aux
+            return out
         # Materialized fallback
         assert self._materialized is not None
         w = self._materialized[idx]
@@ -67,4 +73,22 @@ class WindowTorchDataset(Dataset):
             if w.labels is not None
             else torch.zeros(w.length, dtype=torch.bool)
         )
-        return {"x": x, "labels": labels}
+        out = {"x": x, "labels": labels}
+        if w.aux_labels is not None:
+            out["aux_labels"] = {
+                k: torch.from_numpy(v.copy()) for k, v in w.aux_labels.items()
+            }
+        return out
+
+    def _aux_labels_for(self, start: int, length: int) -> dict[str, torch.Tensor] | None:
+        """Phase 6: cached per-window aux-label fetch from the underlying dataset."""
+        ds = getattr(self, "_dataset", None)
+        if ds is None:
+            return None
+        if hasattr(ds, "_ensure_label_computer"):
+            ds._ensure_label_computer()
+            lc = getattr(ds, "_label_computer", None)
+            if lc is not None:
+                aux_np = lc.labels_for_window(start, length)
+                return {k: torch.from_numpy(v) for k, v in aux_np.items()}
+        return None

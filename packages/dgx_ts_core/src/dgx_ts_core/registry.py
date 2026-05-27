@@ -43,8 +43,11 @@ class Registry(Generic[T]):
         return sorted(self._items)
 
 
-# Three global registries — one per swappable layer of the framework.
+# Global registries — one per swappable layer of the framework.
 # Implementations in dgx_ts_lab register themselves here at import time.
 DATASET_REGISTRY: Registry = Registry("dataset")
 DETECTOR_REGISTRY: Registry = Registry("detector")
 TRAINER_REGISTRY: Registry = Registry("trainer")
+# Phase 6: task heads that attach to a shared encoder (e.g., Sat-TSFM
+# multi-task: fault classifier + RUL regressor + mode predictor + AD).
+HEAD_REGISTRY: Registry = Registry("head")

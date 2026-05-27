@@ -21,24 +21,36 @@ from . import (  # noqa: F401  side-effect: register all
     anomaly_transformer,
     dcdetector,
     patchtst_mae,
+    sat_multimodal,
     sat_tsfm,
+    sat_tsfm_multitask,
+    sequence_transformer,
     subsystem_moe,
 )
 from .anomaly_transformer import AnomalyTransformerDetector
 from .dcdetector import DCdetectorDetector
 from .patchtst_mae import PatchTSTMAEDetector
+from .sat_multimodal import SatMultiModalDetector
 from .sat_tsfm import SatTSFMDetector
+from .sat_tsfm_multitask import SatTSFMMultiTaskDetector
+from .sequence_transformer import SequenceTransformerDetector
 from .subsystem_moe import SubsystemMoEDetector
 
 __all__ = [
     "AnomalyTransformerDetector",
     "DCdetectorDetector",
     "PatchTSTMAEDetector",
+    "SatMultiModalDetector",
     "SatTSFMDetector",
+    "SatTSFMMultiTaskDetector",
+    "SequenceTransformerDetector",
     "SubsystemMoEDetector",
     "anomaly_transformer",
     "dcdetector",
     "patchtst_mae",
+    "sat_multimodal",
     "sat_tsfm",
+    "sat_tsfm_multitask",
+    "sequence_transformer",
     "subsystem_moe",
 ]

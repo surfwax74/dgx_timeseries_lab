@@ -15,6 +15,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
+import numpy as np
 from omegaconf import DictConfig, OmegaConf
 
 from dgx_ts_core.models import FitMode
@@ -89,6 +90,15 @@ def run_benchmark(
                     run.val_metrics = dict(result.metadata.get("val_metrics", {}))
                     run.test_metrics = dict(result.metadata.get("test_metrics", {}))
                     run.elapsed_s = time.time() - t0
+                    # Persist raw (scores, labels) so `dgx-ts viz` can rebuild
+                    # ROC / PR curves later without re-running the model.
+                    _save_run_arrays(
+                        output_dir,
+                        det_key=det_key,
+                        ds_key=ds_key,
+                        seed=int(seed),
+                        arrays=result.metadata,
+                    )
                 except Exception as e:  # noqa: BLE001
                     run.error = f"{type(e).__name__}: {e}"
                 runs.append(run)
@@ -101,6 +111,30 @@ def run_benchmark(
 
     _write_reports(runs, output_dir)
     return runs
+
+
+def _save_run_arrays(
+    output_dir: Path,
+    det_key: str,
+    ds_key: str,
+    seed: int,
+    arrays: dict[str, Any],
+) -> None:
+    """If the trainer surfaced val/test score+label arrays, save them as npz.
+
+    Filename layout: ``{detector}__{dataset}__s{seed}__{split}.npz`` with
+    keys ``scores`` and ``labels``. Used by `dgx_ts_lab.evaluation.visualize`.
+    """
+    for split in ("val", "test"):
+        arr = arrays.get(f"{split}_arrays") or {}
+        scores = arr.get("scores")
+        labels = arr.get("labels")
+        if scores is None or labels is None:
+            continue
+        if scores.size == 0:
+            continue
+        out_path = output_dir / f"{det_key}__{ds_key}__s{seed}__{split}.npz"
+        np.savez(out_path, scores=scores.astype(np.float32), labels=labels.astype(np.bool_))
 
 
 def _write_reports(runs: list[BenchmarkRun], output_dir: Path) -> None:

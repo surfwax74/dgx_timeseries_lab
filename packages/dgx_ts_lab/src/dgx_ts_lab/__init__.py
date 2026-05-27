@@ -7,6 +7,6 @@ detectors, and trainers with their respective registries.
 __version__ = "0.1.0"
 
 # Side-effect imports — populate the registries
-from . import datasets, models, training  # noqa: F401, E402
+from . import datasets, llm, models, training  # noqa: F401, E402
 
-__all__ = ["datasets", "models", "training"]
+__all__ = ["datasets", "llm", "models", "training"]

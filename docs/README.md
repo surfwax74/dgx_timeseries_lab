@@ -23,3 +23,8 @@ Per-tier walkthroughs (prereqs, install, verify, smoke commands, common issues):
 - [`deployment/a5000_server.md`](deployment/a5000_server.md)
 - [`deployment/dgx_h200.md`](deployment/dgx_h200.md)
 - [`deployment/hardware_compatibility_matrix.md`](deployment/hardware_compatibility_matrix.md) — which model fits where
+
+## Phase plans (forward-looking)
+
+- [`phase_plans/README.md`](phase_plans/README.md) — index of multi-phase plans
+- [`phase_plans/phases_6_through_11.md`](phase_plans/phases_6_through_11.md) — A1–D13 demonstration extensions (multi-task heads, explanation, cyber AD, PINN, multi-modal, LLM co-pilot)

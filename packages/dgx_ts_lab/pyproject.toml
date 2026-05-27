@@ -20,6 +20,9 @@ dependencies = [
     # MLOps lift (Phase 5)
     "onnx>=1.17",
     "onnxruntime>=1.20",
+    # Explanation layer (Phase 7)
+    "captum>=0.8",
+    "matplotlib>=3.9",
 ]
 
 [project.scripts]

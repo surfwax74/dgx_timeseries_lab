@@ -36,6 +36,12 @@ from .orbital import OrbitalResidual
 from .pinn_base import PhysicsModel, PINNResidualDetector
 from .thermal import ThermalResidual
 
+# Phase 9: hand-rolled trainable PINN + ADCS dynamics. Imported here so they're
+# part of the public API; registered with _PHYSICS_REGISTRY for Hydra access.
+from ._thermal_solver import ThermalBus, build_thermal_solver, simulate as simulate_thermal  # noqa: F401, E402
+from .thermal_pinn import ThermalPinn, ThermalPinnConfig, ThermalPinnPhysicsModel  # noqa: F401, E402
+from . import adcs  # noqa: F401, E402  ADCS subpackage with 3 integrators + ADCS PINN
+
 _register_physics()
 
 

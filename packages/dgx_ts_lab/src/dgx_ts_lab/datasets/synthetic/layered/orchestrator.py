@@ -53,6 +53,11 @@ class LayeredSyntheticDataset:
         seed: int = 0,
         name: str = "layered_synth",
         subsystem: Subsystem = Subsystem.UNKNOWN,
+        # Phase 6: when True, windows() will populate aux_labels with
+        # multi-task targets (fault_type, rul, next_mode) derived from
+        # fault_log + mode_trace.
+        emit_multitask_labels: bool = False,
+        next_mode_horizon_s: float = 60.0,
         _materialized: dict | None = None,
     ) -> None:
         self._channels = tuple(channels)
@@ -60,6 +65,9 @@ class LayeredSyntheticDataset:
         self._name = name
         self._subsystem = subsystem
         self._seed = int(seed)
+        self._emit_multitask = bool(emit_multitask_labels)
+        self._next_mode_horizon_s = float(next_mode_horizon_s)
+        self._label_computer = None
 
         if _materialized is not None:
             # Sub-dataset path from split() — reuse pre-computed arrays.
@@ -83,6 +91,9 @@ class LayeredSyntheticDataset:
         for component in components:
             component.apply(state, rng)
 
+        # Stash the components so the Phase 7 explanation layer can extract
+        # a ground-truth coupling graph for cascade analysis.
+        self._components = list(components)
         self._data = state.data
         self._mode = state.mode
         self._labels = state.labels
@@ -119,17 +130,36 @@ class LayeredSyntheticDataset:
     def mode_trace(self) -> np.ndarray:
         return self._mode
 
+    def _ensure_label_computer(self) -> None:
+        if not self._emit_multitask:
+            return
+        if self._label_computer is not None:
+            return
+        from .labels import MultiTaskLabelComputer
+
+        self._label_computer = MultiTaskLabelComputer(
+            fault_log=self._fault_log,
+            mode_trace=self._mode,
+            sample_rate_hz=self._sample_rate_hz,
+            next_mode_horizon_s=self._next_mode_horizon_s,
+        )
+
     def windows(self, length: int, stride: int) -> Iterator[TelemetryWindow]:
         n = self._data.shape[0]
         if length > n:
             return
+        self._ensure_label_computer()
         for start in range(0, n - length + 1, stride):
             end = start + length
+            aux = None
+            if self._emit_multitask and self._label_computer is not None:
+                aux = self._label_computer.labels_for_window(start, length)
             yield TelemetryWindow(
                 tensor=self._data[start:end].copy(),
                 timestamps=self._timestamps[start:end].copy(),
                 channels=self._channels,
                 labels=self._labels[start:end].copy(),
+                aux_labels=aux,
                 provenance={"source": self._name, "start": start, "end": end},
             )
 

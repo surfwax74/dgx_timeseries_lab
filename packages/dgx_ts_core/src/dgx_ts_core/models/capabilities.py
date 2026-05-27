@@ -45,3 +45,7 @@ class Capabilities:
     # Phase 5: can the detector emit a threshold-baked ONNX variant
     # that outputs is_anomaly:bool directly instead of raw scores?
     supports_export_threshold_baked: bool = False
+    # Phase 6: does the detector support attaching multiple task heads
+    # (fault classification, RUL regression, mode prediction, etc.) on
+    # top of a shared encoder? Multi-task detectors set this to True.
+    supports_multi_task: bool = False
