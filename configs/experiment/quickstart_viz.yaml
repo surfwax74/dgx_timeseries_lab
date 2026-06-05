@@ -1,0 +1,36 @@
+# @package _global_
+# Self-contained bake-off used by scripts/quickstart.{ps1,sh}.
+#
+# Runs 3 detectors on the LayeredSynth (in-memory, no parquet on disk)
+# and produces the artifacts that `dgx-ts viz` then turns into PNGs.
+# CPU-friendly: completes in ~1 minute on a laptop.
+defaults:
+  - override /trainer: single_cpu
+
+trainer:
+  max_epochs: 1
+  batch_size: 16
+  window_length: 128
+  window_stride: 128
+  learning_rate: 0.0005
+
+suite:
+  name: quickstart_viz
+  mode: pretrain
+
+  detectors:
+    - {key: rolling_mean,        params: {}}
+    - {key: patchtst_mae,        params: {window_length: 128, patch_len: 16, d_model: 32, n_layers: 1, n_heads: 2}}
+    - {key: anomaly_transformer, params: {window_length: 128, d_model: 32, n_layers: 1, n_heads: 2}}
+
+  datasets:
+    - key: trivial_synth
+      params:
+        n_samples: 4000
+        n_channels: 4
+        anomaly_rate: 0.02
+        anomaly_magnitude_sigmas: 6.0
+
+  seeds: [0, 1]
+
+output_dir: benchmark_reports

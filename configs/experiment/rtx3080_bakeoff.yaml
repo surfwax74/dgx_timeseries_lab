@@ -1,0 +1,77 @@
+# @package _global_
+# Real bake-off targeted at RTX 3080 (10-12 GB).
+#
+# Detectors:
+#   - rolling_mean         (classical baseline — should be beatable)
+#   - patchtst_mae         (best from-scratch general AD)
+#   - anomaly_transformer  (attention-based AD)
+#   - dcdetector           (dual-attention contrastive)
+#
+# Dataset: LEO EPS layered-synth preset (6-channel orbital with realistic
+# noise, mode transitions, drifts, and 5 fault types). This is the
+# scenario where neural detectors actually beat rolling_mean.
+#
+# Wall-clock estimate on RTX 3080:
+#   - rolling_mean ~ 1 s/seed (no training)
+#   - patchtst_mae ~ 90 s/seed (20 epochs)
+#   - anomaly_transformer ~ 150 s/seed
+#   - dcdetector ~ 130 s/seed
+#   Total for 4 detectors x 3 seeds ~ 25 minutes.
+defaults:
+  - override /trainer: rtx3080
+
+trainer:
+  max_epochs: 20
+  batch_size: 32
+  window_length: 256
+  window_stride: 128
+  learning_rate: 0.0003
+
+suite:
+  name: rtx3080_bakeoff
+  mode: pretrain
+
+  detectors:
+    - {key: rolling_mean,        params: {}}
+    - {key: patchtst_mae,        params: {window_length: 256, patch_len: 16, d_model: 128, n_layers: 3, n_heads: 4, mask_ratio: 0.4}}
+    - {key: anomaly_transformer, params: {window_length: 256, d_model: 128, n_layers: 3, n_heads: 4}}
+    - {key: dcdetector,          params: {window_length: 256, patch_len: 16, d_model: 64}}
+
+  datasets:
+    - key: layered_synth
+      params:
+        n_samples: 21600   # 6 hours @ 1 Hz; enough faults per split for stable AUC
+        sample_rate_hz: 1.0
+        seed: 0
+        name: leo_eps_6ch
+        channels:
+          - {name: bus_v,    units: V,    subsystem: eps,     sample_rate_hz: 1.0}
+          - {name: bus_i,    units: A,    subsystem: eps,     sample_rate_hz: 1.0}
+          - {name: bat_soc,  units: pct,  subsystem: eps,     sample_rate_hz: 1.0}
+          - {name: solar_p,  units: W,    subsystem: eps,     sample_rate_hz: 1.0}
+          - {name: tcs_temp, units: degC, subsystem: tcs,     sample_rate_hz: 1.0}
+          - {name: pld_curr, units: A,    subsystem: payload, sample_rate_hz: 1.0}
+        components:
+          - {_target_: dgx_ts_lab.datasets.synthetic.layered.modes.ModeMachine, period_s: 5400.0, eclipse_fraction: 0.35}
+          - {_target_: dgx_ts_lab.datasets.synthetic.layered.physics.OrbitalSinusoid, channel: bus_v,    amplitude: 0.6, period_s: 5400.0, baseline: 28.0}
+          - {_target_: dgx_ts_lab.datasets.synthetic.layered.physics.OrbitalSinusoid, channel: bus_i,    amplitude: 0.1, period_s: 5400.0, baseline: 1.2}
+          - {_target_: dgx_ts_lab.datasets.synthetic.layered.physics.OrbitalSinusoid, channel: bat_soc,  amplitude: 0.05, period_s: 5400.0, baseline: 0.85}
+          - {_target_: dgx_ts_lab.datasets.synthetic.layered.physics.OrbitalSinusoid, channel: solar_p,  amplitude: 50.0, period_s: 5400.0, baseline: 80.0}
+          - {_target_: dgx_ts_lab.datasets.synthetic.layered.physics.ConstantBaseline, channel: tcs_temp, value: 18.0}
+          - {_target_: dgx_ts_lab.datasets.synthetic.layered.physics.OrbitalSinusoid, channel: pld_curr,  amplitude: 0.3, period_s: 5400.0, baseline: 0.8}
+          - {_target_: dgx_ts_lab.datasets.synthetic.layered.noise.GaussianNoise, channel: bus_v,    std: 0.02}
+          - {_target_: dgx_ts_lab.datasets.synthetic.layered.noise.GaussianNoise, channel: bus_i,    std: 0.01}
+          - {_target_: dgx_ts_lab.datasets.synthetic.layered.noise.GaussianNoise, channel: bat_soc,  std: 0.005}
+          - {_target_: dgx_ts_lab.datasets.synthetic.layered.noise.GaussianNoise, channel: solar_p,  std: 1.5}
+          - {_target_: dgx_ts_lab.datasets.synthetic.layered.noise.GaussianNoise, channel: tcs_temp, std: 0.15}
+          - {_target_: dgx_ts_lab.datasets.synthetic.layered.noise.GaussianNoise, channel: pld_curr, std: 0.02}
+          # Mix of fault types — the variety is what rolling_mean can't handle
+          - {_target_: dgx_ts_lab.datasets.synthetic.layered.faults.PointFault,       channel: bus_v,    rate_per_hour: 4.0, magnitude: 3.0}
+          - {_target_: dgx_ts_lab.datasets.synthetic.layered.faults.DriftFault,       channel: bat_soc,  rate_per_day: 12.0, ramp_duration_s: 600.0, final_offset: 0.15, persist: false}
+          - {_target_: dgx_ts_lab.datasets.synthetic.layered.faults.StuckAtFault,     channel: solar_p,  rate_per_day: 80.0, min_duration_s: 60.0, max_duration_s: 180.0}
+          - {_target_: dgx_ts_lab.datasets.synthetic.layered.faults.OscillationFault, channel: pld_curr, rate_per_day: 24.0, frequency_hz: 0.1, amplitude: 0.4, duration_s: 120.0}
+          - {_target_: dgx_ts_lab.datasets.synthetic.layered.faults.DropoutFault,     channel: bus_i,    rate_per_hour: 1.5, min_duration_s: 30.0, max_duration_s: 90.0}
+
+  seeds: [0, 1, 2]
+
+output_dir: benchmark_reports
