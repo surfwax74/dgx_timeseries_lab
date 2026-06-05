@@ -1,0 +1,10 @@
+# Phase 9 ADCS PINN. Pick integrator via `integrator` field.
+# integrator options: "euler" (cheapest), "rk4" (default), "so3" (Lie-group, manifold-preserving)
+_target_key: adcs_pinn           # registered separately — Phase 9 demos this standalone
+
+integrator: rk4
+n_freqs: 16
+hidden: 64
+n_layers: 4
+horizon_s: 600.0
+n_collocation: 256

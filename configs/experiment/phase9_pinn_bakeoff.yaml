@@ -1,0 +1,41 @@
+# @package _global_
+# Phase 9 PINN bake-off: naive ThermalResidual vs trainable thermal PINN
+# against the layered LEO EPS preset, both as PhysicsModel wrappers around
+# PatchTST+MAE.
+defaults:
+  - override /dataset: presets/leo_eps_full_24h
+  - override /trainer: cpu
+
+trainer:
+  max_epochs: 3
+  batch_size: 16
+  window_length: 256
+  window_stride: 128
+
+suite:
+  name: phase9_pinn_bakeoff
+  mode: pretrain
+
+  detectors:
+    - {key: rolling_mean, params: {}}
+    - {key: patchtst_mae, params: {window_length: 256, patch_len: 16, d_model: 64, n_layers: 2, n_heads: 2}}
+    - key: pinn_residual
+      params:
+        inner: {_target_key: patchtst_mae, window_length: 256, patch_len: 16, d_model: 64, n_layers: 2, n_heads: 2}
+        physics: {_target_key: thermal, period_s: 5400.0, eclipse_fraction: 0.35}
+    # The trainable PINN row activates after running scripts/train_thermal_pinn.sh
+    # which produces a checkpoint at data/models/thermal_pinn/<run>/state.pt.
+    # Uncomment to include after that step:
+    # - key: pinn_residual
+    #   params:
+    #     inner: {_target_key: patchtst_mae, window_length: 256, patch_len: 16, d_model: 64, n_layers: 2, n_heads: 2}
+    #     physics: {_target_key: thermal_pinn, checkpoint: data/models/thermal_pinn/state.pt}
+
+  datasets:
+    - key: parquet_telemetry
+      params:
+        data_path: data/synth/leo_eps_full_24h
+
+  seeds: [0]
+
+output_dir: benchmark_reports
