@@ -1,0 +1,36 @@
+# @package _global_
+# Phase 10 multi-modal smoke: pretrain Sat-MultiModal (3 streams) on the
+# synthetic LEO multi-modal dataset (correlated telemetry + commands + logs).
+# The model exploits cross-modal correlation: telemetry faults coincide with
+# ERROR/FATAL logs and (sometimes) preceding priv-escalation commands.
+defaults:
+  - override /dataset: multimodal_synth
+  - override /model: sat_multimodal_small
+  - override /trainer: cpu
+
+mode: pretrain
+
+dataset:
+  n_seconds: 1024
+  n_telemetry_channels: 6
+  command_rate_per_hour: 60.0
+  fault_correlated_priv_rate: 0.15
+
+model:
+  window_length: 128
+  patch_len: 16
+  d_model: 32
+  n_heads: 2
+  n_layers_self_attn_per_modality: 1
+  n_layers_cross_modal: 1
+  d_ff: 64
+
+trainer:
+  max_epochs: 1
+  batch_size: 4
+  window_length: 128
+  window_stride: 128
+
+mlflow:
+  experiment_name: phase10_multimodal
+  run_name: sat_multimodal_smoke

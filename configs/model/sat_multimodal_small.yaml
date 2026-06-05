@@ -1,0 +1,12 @@
+# Sat-MultiModal small variant — RTX 3080 / single A5000 sweet spot.
+# Three-stream (telemetry / commands / logs) cross-modal foundation model.
+_target_key: sat_multimodal
+window_length: 256
+patch_len: 16
+d_model: 64
+n_heads: 4
+n_layers_self_attn_per_modality: 1
+n_layers_cross_modal: 2
+d_ff: 256
+dropout: 0.1
+mask_ratio: 0.15

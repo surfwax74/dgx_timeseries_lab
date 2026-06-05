@@ -1,0 +1,13 @@
+# Sat-MultiModal medium variant — A5000 / single H200.
+# Three-stream cross-modal foundation model with deeper per-modality
+# encoders and a wider cross-modal stack.
+_target_key: sat_multimodal
+window_length: 512
+patch_len: 16
+d_model: 256
+n_heads: 8
+n_layers_self_attn_per_modality: 2
+n_layers_cross_modal: 4
+d_ff: 1024
+dropout: 0.1
+mask_ratio: 0.15
