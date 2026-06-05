@@ -1,0 +1,30 @@
+# @package _global_
+# Phase 6 multi-task smoke: train Sat-TSFM with 4 heads (AD + fault + RUL + mode)
+# on the LEO EPS full preset with multitask labels enabled.
+defaults:
+  - override /dataset: presets/leo_eps_full_24h
+  - override /model: sat_tsfm_multitask
+  - override /trainer: cpu
+
+mode: pretrain
+
+dataset:
+  # Critical: turn on multi-task label emission.
+  emit_multitask_labels: true
+  next_mode_horizon_s: 60.0
+
+model:
+  window_length: 128
+  d_model: 64
+  n_layers: 2
+  n_heads: 2
+
+trainer:
+  max_epochs: 1
+  batch_size: 8
+  window_length: 128
+  window_stride: 256
+
+mlflow:
+  experiment_name: phase6_multitask
+  run_name: sat_tsfm_multitask_smoke

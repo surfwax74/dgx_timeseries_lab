@@ -1,0 +1,24 @@
+# Sat-TSFM with multi-task heads — Phase 6.
+# Shared encoder + AD reconstruction + 3 task heads (fault / RUL / mode).
+_target_key: sat_tsfm_multitask
+
+# Backbone (same shape as sat_tsfm_small)
+window_length: 256
+patch_len: 16
+d_model: 128
+n_heads: 4
+n_layers: 4
+d_ff: 512
+dropout: 0.1
+max_channels: 256
+
+# Task heads — list of registered-key + per-head kwargs.
+# Omit a head to disable it.
+heads:
+  - {key: fault_classifier, num_classes: 8}
+  - {key: rul_regressor}
+  - {key: mode_predictor, num_modes: 6}
+
+# Loss weights — AD plus per-head weights (each head also has a default
+# loss_weight that's used when not overridden in the head dict).
+ad_loss_weight: 1.0
