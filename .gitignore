@@ -221,8 +221,33 @@ __marimo__/
 # dgx_timeseries_lab project-specific
 # ──────────────────────────────────────────────────────────────────────
 
-# Datasets (symlinked from NAS on DGX; never checked in)
-data/
+# Top-level data/ directory holds large external artifacts that never get
+# checked in — NAS-symlinked telemetry archives, NASA SMAP/MSL downloads,
+# sneakernet-transferred LLM weights (Llama / Mistral GGUFs), and parquet
+# outputs from `dgx-ts synth`. The leading slash is critical: it anchors
+# the pattern at the repo root so it does NOT match the in-package
+# `packages/dgx_ts_core/src/dgx_ts_core/data/` Python module (which holds
+# the TelemetryWindow / Channel / Dataset Protocol code).
+/data/
+
+# Belt-and-suspenders: explicit allow rule for the in-package `data/`
+# Python module. The anchored `/data/` rule above already spares it; this
+# makes the intent obvious to future maintainers and protects against
+# someone accidentally re-adding a bare `data/` line.
+#
+# NOTE: we DON'T add a parallel `!packages/**/datasets/**` rule — there
+# was never a `datasets/` ignore to override, and the broad allow leaked
+# __pycache__/ directories back into tracking. The original __pycache__/
+# rule at the top of this file handles those without help.
+!packages/**/data/
+!packages/**/data/**
+
+# Re-ignore build artifacts AFTER the allow rule above. Gitignore's
+# "last matching rule wins" semantics means these need to come after the
+# `!packages/**/data/**` allow to keep __pycache__/ and *.pyc out of
+# tracking even inside the allowed in-package data/ paths.
+**/__pycache__/
+**/*.py[codz]
 
 # MLflow tracking (kept local per-machine)
 mlruns/
