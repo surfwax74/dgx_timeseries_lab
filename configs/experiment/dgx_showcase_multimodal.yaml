@@ -1,0 +1,31 @@
+# @package _global_
+# DGX showcase, companion run: Sat-MultiModal LARGE on 8x H200.
+#
+# Three-stream cross-modal MAE pretrain (telemetry + commands + logs).
+# At d=512, 6 cross-modal layers, window=4096 with 30+ channels this is
+# the only sensible configuration: pure FSDP across NVSwitch — PCIe-only
+# federated cards spend more time gathering than computing.
+defaults:
+  - override /dataset: multimodal_synth
+  - override /model: sat_multimodal_large
+  - override /trainer: h200_fsdp_8x
+
+mode: pretrain
+
+dataset:
+  # 24 hours of correlated telemetry + commands + logs
+  n_seconds: 86400
+  n_telemetry_channels: 32
+  command_rate_per_hour: 90.0
+  fault_correlated_priv_rate: 0.15
+
+trainer:
+  max_epochs: 100
+  batch_size: 16
+  window_length: 4096
+  window_stride: 2048
+  learning_rate: 0.0001
+
+mlflow:
+  experiment_name: dgx_showcase
+  run_name: sat_multimodal_large_fsdp_8xh200

@@ -1,0 +1,49 @@
+# @package _global_
+# DGX 8xH200 SHOWCASE — the "you need this hardware" demo.
+#
+# Trains Sat-TSFM XLarge (1024-d, 24 layers, ~1.5B params, window 4096)
+# with FSDP sharded across all 8 H200s and multi-task heads enabled.
+#
+# Why this config justifies the DGX:
+#   * 1.5B params @ bf16-mixed = ~12 GB just for weights; activations at
+#     window=4096 push to ~80 GB per device. Cannot fit on a single
+#     H200 (141 GB) without sharding, and PCIe-only inter-node sharing
+#     destroys throughput — NVSwitch (900 GB/s all-to-all) is required.
+#   * Multi-task heads on top: one foundation backbone serves AD + fault
+#     classifier + RUL regressor + mode predictor. Train once, serve four.
+#   * 200 epochs over 24h of 83-channel LEO EPS telemetry — completes
+#     overnight on 8x H200, would take weeks on shared/federated GPUs.
+#
+# Companion artifacts the demo script produces:
+#   * benchmark_reports/dgx_showcase/figures/*.png
+#   * runs/<timestamp>/model.onnx + model_card.yaml + feature_schema.yaml
+#   * MLflow run with throughput-per-GPU + memory breakdown
+defaults:
+  - override /dataset: presets/leo_eps_full_24h
+  - override /model: sat_tsfm_xlarge
+  - override /trainer: h200_fsdp_8x
+
+mode: pretrain
+
+dataset:
+  # Multi-task labels — one backbone, four heads. This is the foundation story.
+  emit_multitask_labels: true
+  next_mode_horizon_s: 60.0
+
+# Heads attached on top of the shared encoder
+model:
+  heads:
+    - {key: fault_classifier, num_classes: 8}
+    - {key: rul_regressor}
+    - {key: mode_predictor, num_modes: 6}
+
+trainer:
+  max_epochs: 200
+  batch_size: 32              # per-device → effective batch 256
+  window_length: 4096
+  window_stride: 2048
+  learning_rate: 0.00008
+
+mlflow:
+  experiment_name: dgx_showcase
+  run_name: sat_tsfm_xl_multitask_fsdp_8xh200
