@@ -1,0 +1,5 @@
+_target_key: operator_fingerprint
+embedding_dim: 16
+n_operators: 4
+hidden_dim: 64
+pretrain_contrastive_weight: 1.0

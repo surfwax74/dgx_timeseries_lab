@@ -1,0 +1,5 @@
+# Synthetic operator activity windows with impersonation injection.
+_target_key: synth_operator_traffic
+n_windows: 5000
+seed: 0
+impersonation_rate: 0.02

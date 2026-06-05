@@ -1,0 +1,12 @@
+# Synthetic command-stream with realistic injection patterns.
+_target_key: synth_command_sequence
+n_commands: 10000
+seed: 0
+routine_rate: 0.60
+scheduled_rate: 0.15
+operator_rate: 0.24
+priv_rate: 0.01
+inject_priv_escalation_rate: 0.002
+inject_flooding_rate: 0.001
+inject_replay_rate: 0.001
+inject_sequence_anomaly_rate: 0.0015

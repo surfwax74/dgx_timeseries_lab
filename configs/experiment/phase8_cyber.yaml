@@ -1,0 +1,31 @@
+# @package _global_
+# Phase 8 cybersecurity bake-off: command-sequence MLM vs operator fingerprint
+# on their respective synthetic datasets.
+defaults:
+  - override /trainer: cpu
+
+trainer:
+  max_epochs: 3
+  batch_size: 16
+  window_length: 256
+  window_stride: 128
+
+suite:
+  name: phase8_cyber_bakeoff
+  mode: pretrain
+
+  detectors:
+    - key: sequence_transformer
+      params: {vocab_size: 32, max_seq_len: 256, d_model: 64, n_layers: 2, n_heads: 2, score_n_samples: 3}
+    - key: operator_fingerprint
+      params: {embedding_dim: 8, n_operators: 3, hidden_dim: 32}
+
+  datasets:
+    - key: synth_command_sequence
+      params: {n_commands: 5000, seed: 0}
+    - key: synth_operator_traffic
+      params: {n_windows: 2000, seed: 0, impersonation_rate: 0.05}
+
+  seeds: [0]
+
+output_dir: benchmark_reports

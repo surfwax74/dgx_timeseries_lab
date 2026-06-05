@@ -1,0 +1,10 @@
+_target_key: sequence_transformer
+vocab_size: 32         # placeholder; detector overrides from dataset.vocab_size at fit
+max_seq_len: 512
+d_model: 128
+n_heads: 4
+n_layers: 4
+d_ff: 256
+dropout: 0.1
+mask_prob: 0.15
+score_n_samples: 5
