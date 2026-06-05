@@ -1,0 +1,7 @@
+# Air-gap co-pilot using vLLM serving Llama 3.1 70B Instruct on H200.
+# Boot the server with scripts/setup_vllm_server.sh first.
+kind: vllm
+model_id: meta-llama/Llama-3.1-70B-Instruct
+base_url: http://localhost:8000/v1
+api_key: EMPTY
+timeout_s: 240.0

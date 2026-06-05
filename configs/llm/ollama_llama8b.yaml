@@ -1,0 +1,6 @@
+# Single-GPU dev co-pilot using Ollama serving Llama 3.1 8B Instruct.
+# Boot with `ollama serve` + `ollama pull llama3.1:8b`.
+kind: ollama
+model_id: llama3.1:8b
+base_url: http://localhost:11434
+timeout_s: 120.0

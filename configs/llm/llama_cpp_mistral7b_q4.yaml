@@ -1,0 +1,8 @@
+# CPU / tiny-GPU co-pilot using llama-cpp-python with Mistral 7B Q4 GGUF.
+# Drop the GGUF into data/llm_weights/ via sneakernet first.
+kind: llama_cpp
+model_path: data/llm_weights/mistral-7b-instruct-v0.3.Q4_K_M.gguf
+n_ctx: 8192
+n_gpu_layers: 0           # set to e.g. 32 on RTX 3080 to offload layers
+n_threads: null
+verbose: false

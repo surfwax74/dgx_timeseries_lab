@@ -1,0 +1,7 @@
+# Air-gap co-pilot using vLLM serving Mistral 8x22B Instruct on 8x H200.
+# Boot with scripts/setup_vllm_server.sh after sneakernet-transferring weights.
+kind: vllm
+model_id: mistralai/Mixtral-8x22B-Instruct-v0.1
+base_url: http://localhost:8000/v1
+api_key: EMPTY
+timeout_s: 240.0

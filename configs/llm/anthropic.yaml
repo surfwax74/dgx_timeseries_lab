@@ -1,0 +1,5 @@
+# Online co-pilot using Claude via the Anthropic API.
+# Requires ANTHROPIC_API_KEY in env. Default model is the current Sonnet.
+kind: anthropic
+model_id: claude-sonnet-4-5
+# api_key intentionally omitted — read from ANTHROPIC_API_KEY at runtime.
