@@ -36,6 +36,12 @@ logs the run to `mlruns/`.
 is the authoritative recipe list — one entry per phase, per experiment,
 per tier, with exact commands, wall-clock estimates, and expected outputs.
 
+**New to this lab?** → [`docs/intern_onboarding.md`](docs/intern_onboarding.md)
+is a hands-on, level-by-level walkthrough. Eight levels from "run the
+smoke test" through "design and present your own bake-off," with
+checkpoints after each section. ~8 hours total; designed for an intern
+or new contributor to drive themselves through.
+
 ## The three contracts
 
 All hot-swap is built on three small Protocols defined in `dgx_ts_core`:

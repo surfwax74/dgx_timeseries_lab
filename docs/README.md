@@ -6,6 +6,7 @@ Cross-cutting documentation. Per-module documentation lives next to the code as 
 
 | File | Read when… |
 |---|---|
+| [`intern_onboarding.md`](intern_onboarding.md) | **First time using this lab.** Step-by-step hands-on walkthrough — 8 levels from "run the smoke test" up to "design and present your own bake-off". Includes per-level checkpoints. Bookmark this for new contributors. |
 | [`experiments_cookbook.md`](experiments_cookbook.md) | **You need the exact command for a phase / experiment / tier.** Quick-reference table + per-phase recipes + Hydra override cheat-sheet. **Start here for "how do I run X?"**|
 | [`../packages/dgx_ts_lab/src/dgx_ts_lab/models/README.md`](../packages/dgx_ts_lab/src/dgx_ts_lab/models/README.md) | **You need to know what algorithm each detector implements.** 16 detectors + 3 task heads, organized by algorithm family (classical / from-scratch transformers / foundation models / behavior / physics-informed). Includes capabilities matrix and "when to use what" cheat-sheet. |
 | [`architecture.md`](architecture.md) | First time touching the codebase. Explains how the pieces fit. |
