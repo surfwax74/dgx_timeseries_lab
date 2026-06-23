@@ -22,7 +22,7 @@ def _segments(labels: npt.NDArray[np.bool_]) -> list[tuple[int, int]]:
     diff = np.diff(labels.astype(np.int8), prepend=0, append=0)
     starts = np.where(diff == 1)[0]
     ends = np.where(diff == -1)[0]
-    return [(int(s), int(e)) for s, e in zip(starts, ends)]
+    return [(int(s), int(e)) for s, e in zip(starts, ends, strict=False)]
 
 
 def point_adjust(

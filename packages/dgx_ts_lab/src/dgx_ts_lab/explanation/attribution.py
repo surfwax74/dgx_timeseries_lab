@@ -14,7 +14,6 @@ from dataclasses import dataclass
 
 import numpy as np
 import torch
-
 from dgx_ts_core.data import TelemetryWindow
 
 from .report_schema import ChannelAttribution

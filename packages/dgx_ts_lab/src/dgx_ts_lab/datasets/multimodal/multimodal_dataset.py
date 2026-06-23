@@ -14,7 +14,6 @@ from collections.abc import Iterator, Mapping
 from typing import Any
 
 import numpy as np
-
 from dgx_ts_core.data import (
     Channel,
     DatasetStats,
@@ -24,7 +23,6 @@ from dgx_ts_core.data import (
     Units,
 )
 from dgx_ts_core.registry import DATASET_REGISTRY
-
 
 COMMAND_FEATURE_NAMES = ("cmd_count", "cmd_last_opcode_id", "cmd_last_param_id")
 LOG_FEATURE_NAMES = ("log_count", "log_max_severity", "log_last_source_id")
@@ -124,7 +122,6 @@ class MultiModalDataset:
 
     def split_window_by_modality(self, window: TelemetryWindow) -> dict[str, np.ndarray]:
         """Slice a window's tensor into the three modality views."""
-        T = window.tensor.shape[0]
         return {
             "telemetry": window.tensor[:, : self._c_tel],                         # (T, C_tel)
             "commands": window.tensor[:, self._c_tel : self._c_tel + 3],          # (T, 3)
@@ -173,7 +170,7 @@ class MultiModalDataset:
                 },
             )
 
-    def split(self, scheme: SplitScheme) -> Mapping[str, "MultiModalDataset"]:
+    def split(self, scheme: SplitScheme) -> Mapping[str, MultiModalDataset]:
         n = len(self._data)
         n_train = int(scheme.train_frac * n)
         n_val = int(scheme.val_frac * n)

@@ -19,7 +19,6 @@ from pathlib import Path
 from typing import Any, Protocol, runtime_checkable
 
 import numpy as np
-
 from dgx_ts_core.data import (
     Channel,
     DatasetStats,
@@ -103,7 +102,7 @@ class _ResidualDataset:
         for w in self._inner.windows(length=length, stride=stride):
             yield self._residual_window(w)
 
-    def split(self, scheme: SplitScheme) -> Mapping[str, "_ResidualDataset"]:
+    def split(self, scheme: SplitScheme) -> Mapping[str, _ResidualDataset]:
         return {
             split_name: _ResidualDataset(sub, self._physics)
             for split_name, sub in self._inner.split(scheme).items()
@@ -252,7 +251,7 @@ class PINNResidualDetector:
         self._inner.save(path)
 
     @classmethod
-    def load(cls, path: Path) -> "PINNResidualDetector":
+    def load(cls, path: Path) -> PINNResidualDetector:
         raise NotImplementedError(
             "PINNResidualDetector.load needs both inner + physics — "
             "construct manually by loading the inner detector and re-attaching "

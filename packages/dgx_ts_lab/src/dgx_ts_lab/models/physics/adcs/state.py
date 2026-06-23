@@ -26,12 +26,12 @@ class AttitudeState:
     body_rates: torch.Tensor
     rw_speeds: torch.Tensor
 
-    def normalize_quaternion(self) -> "AttitudeState":
+    def normalize_quaternion(self) -> AttitudeState:
         """Renormalize the quaternion to unit length (drifts under Euler/RK4)."""
         q = self.quaternion / self.quaternion.norm(dim=-1, keepdim=True).clamp_min(1e-12)
         return AttitudeState(q, self.body_rates, self.rw_speeds)
 
-    def detach_(self) -> "AttitudeState":
+    def detach_(self) -> AttitudeState:
         """In-place detach all tensors (useful between integrator steps)."""
         return AttitudeState(
             self.quaternion.detach(),
@@ -52,10 +52,12 @@ class SpacecraftInertia:
     rw_inertia: torch.Tensor
 
     @classmethod
-    def default_3axis(cls, device: torch.device | None = None) -> "SpacecraftInertia":
+    def default_3axis(cls, device: torch.device | None = None) -> SpacecraftInertia:
         """A reasonable small-sat default: 1 kg·m² each axis, 3 wheels on body axes."""
         dev = device or torch.device("cpu")
-        I = torch.diag(torch.tensor([1.0, 1.0, 1.0], device=dev))
+        # `I` matches the standard moment-of-inertia notation from rigid-body
+        # mechanics (Wertz, Hughes, et al.); reads naturally to ADCS engineers.
+        I = torch.diag(torch.tensor([1.0, 1.0, 1.0], device=dev))   # noqa: E741
         axes = torch.eye(3, device=dev)
         wheel_I = torch.tensor([0.01, 0.01, 0.01], device=dev)
         return cls(I, axes, wheel_I)

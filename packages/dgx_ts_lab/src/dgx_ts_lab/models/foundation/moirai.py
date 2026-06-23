@@ -24,11 +24,9 @@ from typing import Any
 
 import torch
 import torch.nn as nn
-
 from dgx_ts_core.registry import DETECTOR_REGISTRY
 
 from ._base import ForecastingDetector
-
 
 _UNI2TS_HINT = """\
 Moirai requires the `uni2ts` package (Salesforce's research framework).
@@ -127,7 +125,7 @@ class MoiraiDetector(ForecastingDetector):
         )
 
     @classmethod
-    def load(cls, path: Path) -> "MoiraiDetector":
+    def load(cls, path: Path) -> MoiraiDetector:
         data = torch.load(Path(path), map_location="cpu", weights_only=False)
         det = cls(
             model=data["model_name"],

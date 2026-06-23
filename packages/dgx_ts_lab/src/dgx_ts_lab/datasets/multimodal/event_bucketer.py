@@ -43,7 +43,7 @@ class CommandEventBucketer:
         # Count per bin
         np.add.at(out[:, 0], bin_idx, 1.0)
         # Last opcode + last param per bin: iterate in order so later overwrites earlier
-        for b, op_, p in zip(bin_idx, opc, prm):
+        for b, op_, p in zip(bin_idx, opc, prm, strict=False):
             out[b, 1] = float(op_)
             out[b, 2] = float(p)
         return out
@@ -76,7 +76,7 @@ class LogEventBucketer:
         src = source_ids[valid]
         np.add.at(out[:, 0], bin_idx, 1.0)
         # Max severity + last source per bin
-        for b, s, src_ in zip(bin_idx, sev, src):
+        for b, s, src_ in zip(bin_idx, sev, src, strict=False):
             if s > out[b, 1]:
                 out[b, 1] = float(s)
             out[b, 2] = float(src_)

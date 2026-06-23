@@ -10,8 +10,8 @@ from __future__ import annotations
 
 from typing import Any
 
-from .backend import LLMBackend
 from ._mock_backend import MockBackend
+from .backend import LLMBackend
 
 
 def build_backend(kind: str, **kwargs: Any) -> LLMBackend:

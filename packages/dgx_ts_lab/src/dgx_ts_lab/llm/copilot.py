@@ -16,7 +16,6 @@ Designed for the `dgx-ts copilot` REPL but also importable for batch use
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Optional
 
 from .backend import (
     AssistantMessage,
@@ -30,7 +29,6 @@ from .backend import (
     UserMessage,
 )
 from .telemetry_tools import ToolRegistry
-
 
 _DEFAULT_SYSTEM = (
     "You are a satellite operations co-pilot. You answer questions about "
@@ -82,7 +80,7 @@ class Copilot:
         tool_log: list[dict] = []
         tool_defs = self.tools.list_defs()
         last_text = ""
-        last_raw: Optional[GenerateResult] = None
+        last_raw: GenerateResult | None = None
         for _ in range(self.max_tool_iters + 1):
             result = self.backend.generate(
                 self.history, tools=tool_defs, options=self.options,

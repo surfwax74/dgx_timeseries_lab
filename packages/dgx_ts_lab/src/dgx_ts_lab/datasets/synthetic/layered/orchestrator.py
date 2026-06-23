@@ -12,7 +12,6 @@ from collections.abc import Iterator, Mapping
 from typing import Any
 
 import numpy as np
-
 from dgx_ts_core.data import (
     Channel,
     DatasetStats,
@@ -163,7 +162,7 @@ class LayeredSyntheticDataset:
                 provenance={"source": self._name, "start": start, "end": end},
             )
 
-    def split(self, scheme: SplitScheme) -> Mapping[str, "LayeredSyntheticDataset"]:
+    def split(self, scheme: SplitScheme) -> Mapping[str, LayeredSyntheticDataset]:
         n = self._data.shape[0]
         n_train = int(scheme.train_frac * n)
         n_val = int(scheme.val_frac * n)

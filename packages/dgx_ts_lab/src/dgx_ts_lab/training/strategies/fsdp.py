@@ -34,8 +34,9 @@ def build_fsdp_strategy_kwargs(extra: dict[str, Any]) -> dict[str, Any]:
 
     # Lazy import — torch FSDP types only exist when torch>=2.0 is installed.
     try:
-        from torch.distributed.fsdp.wrap import size_based_auto_wrap_policy
         from functools import partial
+
+        from torch.distributed.fsdp.wrap import size_based_auto_wrap_policy
 
         auto_wrap_policy = partial(
             size_based_auto_wrap_policy, min_num_params=min_params
@@ -50,9 +51,13 @@ def build_fsdp_strategy_kwargs(extra: dict[str, Any]) -> dict[str, Any]:
         "backward_prefetch": backward_prefetch,
     }
     if use_act_ckpt:
-        # Lightning Fabric understands activation_checkpointing_policy as a callable
+        # Lightning Fabric understands activation_checkpointing_policy as a callable.
+        # We probe for the private wrap helper to gate the assignment because older
+        # torch versions don't ship it; the import itself is the availability check.
         try:
-            from torch.distributed.fsdp.wrap import _module_wrap_policy
+            from torch.distributed.fsdp.wrap import (  # noqa: F401
+                _module_wrap_policy as _probe_wrap_policy,
+            )
             kwargs["activation_checkpointing_policy"] = auto_wrap_policy
         except ImportError:
             pass

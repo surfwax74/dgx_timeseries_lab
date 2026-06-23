@@ -8,11 +8,10 @@ operator's traffic for another's at random windows.
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Any
 
 import numpy as np
-
 from dgx_ts_core.data import Subsystem
 from dgx_ts_core.registry import DATASET_REGISTRY
 

@@ -16,9 +16,9 @@ Pass a list of chunked docs at construction; query returns top-k hits.
 
 from __future__ import annotations
 
+from collections.abc import Callable, Sequence
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Callable, Sequence
 
 import numpy as np
 
@@ -129,12 +129,12 @@ class CosineRAGIndex:
         np.savez(path, **meta)
 
     @classmethod
-    def load(cls, path: str | Path) -> "CosineRAGIndex":
+    def load(cls, path: str | Path) -> CosineRAGIndex:
         data = np.load(Path(path), allow_pickle=True)
         idx = cls()
         idx._docs = [
             RAGDocument(doc_id=str(did), title=str(t), text=str(tx))
-            for did, t, tx in zip(data["doc_ids"], data["titles"], data["texts"])
+            for did, t, tx in zip(data["doc_ids"], data["titles"], data["texts"], strict=False)
         ]
         idx._vectors = data["vectors"]
         return idx

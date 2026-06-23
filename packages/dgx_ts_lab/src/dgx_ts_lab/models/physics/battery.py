@@ -14,7 +14,6 @@ from __future__ import annotations
 import re
 
 import numpy as np
-
 from dgx_ts_core.data import TelemetryWindow
 
 

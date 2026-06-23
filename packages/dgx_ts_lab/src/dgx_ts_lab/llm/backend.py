@@ -11,12 +11,13 @@ JSONSchema-shaped so they pass through every provider unchanged.
 
 from __future__ import annotations
 
+from collections.abc import Iterator
 from dataclasses import dataclass, field
-from enum import Enum
-from typing import Any, Iterator, Protocol, runtime_checkable
+from enum import StrEnum
+from typing import Any, Protocol, runtime_checkable
 
 
-class Role(str, Enum):
+class Role(StrEnum):
     """Standard chat roles. Stored as str so JSON serialization is trivial."""
 
     SYSTEM = "system"

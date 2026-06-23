@@ -13,7 +13,6 @@ Fabric path is a clearly marked stub.
 from __future__ import annotations
 
 import numpy as np
-
 from dgx_ts_core.data import SplitScheme, SplitStrategy, TelemetryDataset
 from dgx_ts_core.evaluation.result import EvalReport
 from dgx_ts_core.models import AnomalyDetector, FitMode, FitResult

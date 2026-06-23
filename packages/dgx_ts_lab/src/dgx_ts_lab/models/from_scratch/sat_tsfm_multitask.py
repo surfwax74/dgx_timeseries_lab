@@ -14,10 +14,8 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
-import numpy as np
 import torch
 import torch.nn as nn
-
 from dgx_ts_core.data import TelemetryDataset, TelemetryWindow
 from dgx_ts_core.models import (
     AnomalyScore,
@@ -134,9 +132,7 @@ class SatTSFMMultiTaskDetector:
             return None
         out: dict[str, torch.Tensor] = {}
         for k, v in aux.items():
-            if v.dim() < 1:
-                out[k] = v
-            elif v.shape[-1] == T:
+            if v.dim() < 1 or v.shape[-1] == T:
                 out[k] = v
             elif v.shape[-1] > T:
                 # Crop trailing steps (encoder truncates to n_patches*patch_len)
@@ -144,10 +140,7 @@ class SatTSFMMultiTaskDetector:
             else:
                 # Pad with sentinel — head logic should handle (-1 for ints)
                 pad = T - v.shape[-1]
-                if v.dtype.is_floating_point:
-                    fill = float("nan")
-                else:
-                    fill = -1
+                fill = float("nan") if v.dtype.is_floating_point else -1
                 pad_t = torch.full((*v.shape[:-1], pad), fill, dtype=v.dtype, device=v.device)
                 out[k] = torch.cat([v, pad_t], dim=-1)
         return out
@@ -166,7 +159,7 @@ class SatTSFMMultiTaskDetector:
                 **batch,
                 "aux_labels": self._pad_or_crop_aux(batch["aux_labels"], T_trunc),
             }
-            for name, head in self._head_objs.items():
+            for head in self._head_objs.values():
                 try:
                     head_loss = head.compute_loss(encoded, head_batch)
                     total = total + head.loss_weight * head_loss
@@ -204,7 +197,7 @@ class SatTSFMMultiTaskDetector:
             "aux_labels": self._pad_or_crop_aux(batch.get("aux_labels"), T_trunc),
         }
         out: dict[str, float] = {}
-        for name, head in self._head_objs.items():
+        for head in self._head_objs.values():
             try:
                 out.update(head.compute_metrics(encoded, head_batch))
             except KeyError:
@@ -277,7 +270,7 @@ class SatTSFMMultiTaskDetector:
         )
 
     @classmethod
-    def load(cls, path: Path) -> "SatTSFMMultiTaskDetector":
+    def load(cls, path: Path) -> SatTSFMMultiTaskDetector:
         data = torch.load(Path(path), map_location="cpu", weights_only=False)
         det = cls(
             n_channels=data["n_channels"],

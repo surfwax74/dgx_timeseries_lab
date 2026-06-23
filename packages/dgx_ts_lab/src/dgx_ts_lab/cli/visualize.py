@@ -54,7 +54,7 @@ def run() -> None:
     splits = tuple(s.strip() for s in args.splits.split(",") if s.strip())
     formats = tuple(s.strip().lstrip(".") for s in args.format.split(",") if s.strip())
 
-    print(f"-- Rendering benchmark figures")
+    print("-- Rendering benchmark figures")
     print(f"   from:    {bd}")
     print(f"   to:      {out}")
     print(f"   splits:  {splits}")

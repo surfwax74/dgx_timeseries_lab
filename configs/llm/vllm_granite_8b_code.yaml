@@ -1,0 +1,13 @@
+# IBM Granite Code Instruct 8B via vLLM.
+# Code-specialized variant — substantially more reliable than same-size
+# Llama / Mistral on JSON-mode output. Use this for the Phase 11
+# ProcedureSynthesizer when JSON-mode parse-success rate matters.
+# Apache 2.0.
+#
+# Boot:
+#     scripts/setup_vllm_server.sh /data/llm_weights/granite-8b-code-instruct 1 8000
+kind: vllm
+model_id: ibm-granite/granite-8b-code-instruct
+base_url: http://localhost:8000/v1
+api_key: EMPTY
+timeout_s: 120.0

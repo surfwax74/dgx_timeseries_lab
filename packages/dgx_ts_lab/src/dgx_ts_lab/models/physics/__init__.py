@@ -16,33 +16,38 @@ Registry keys:
     orbital_residual_<inner>    pre-built combos for common pairings (added later)
 """
 
-_PHYSICS_REGISTRY: dict[str, type] = {}
+from . import (
+    adcs,  # noqa: F401  ADCS subpackage with 3 integrators + ADCS PINN
+    battery,  # noqa: F401
+    orbital,  # noqa: F401
+    pinn_base,  # noqa: F401
+    thermal,  # noqa: F401
+)
 
-
-def _register_physics() -> None:
-    """Populate the physics registry — must run after all submodules import."""
-    from .battery import BatteryResidual
-    from .orbital import OrbitalResidual
-    from .thermal import ThermalResidual
-
-    _PHYSICS_REGISTRY["orbital"] = OrbitalResidual
-    _PHYSICS_REGISTRY["thermal"] = ThermalResidual
-    _PHYSICS_REGISTRY["battery"] = BatteryResidual
-
-
-from . import battery, orbital, pinn_base, thermal  # noqa: F401, E402
+# Phase 9: hand-rolled trainable PINN + ADCS dynamics. Imported here so they're
+# part of the public API; registered with _PHYSICS_REGISTRY below.
+from ._thermal_solver import (  # noqa: F401
+    ThermalBus,
+    build_thermal_solver,
+)
+from ._thermal_solver import (  # noqa: F401
+    simulate as simulate_thermal,
+)
 from .battery import BatteryResidual
 from .orbital import OrbitalResidual
 from .pinn_base import PhysicsModel, PINNResidualDetector
 from .thermal import ThermalResidual
+from .thermal_pinn import (  # noqa: F401
+    ThermalPinn,
+    ThermalPinnConfig,
+    ThermalPinnPhysicsModel,
+)
 
-# Phase 9: hand-rolled trainable PINN + ADCS dynamics. Imported here so they're
-# part of the public API; registered with _PHYSICS_REGISTRY for Hydra access.
-from ._thermal_solver import ThermalBus, build_thermal_solver, simulate as simulate_thermal  # noqa: F401, E402
-from .thermal_pinn import ThermalPinn, ThermalPinnConfig, ThermalPinnPhysicsModel  # noqa: F401, E402
-from . import adcs  # noqa: F401, E402  ADCS subpackage with 3 integrators + ADCS PINN
-
-_register_physics()
+_PHYSICS_REGISTRY: dict[str, type] = {
+    "orbital": OrbitalResidual,
+    "thermal": ThermalResidual,
+    "battery": BatteryResidual,
+}
 
 
 __all__ = [

@@ -6,7 +6,6 @@ import numpy as np
 import pytest
 import torch
 
-
 # ── Multi-zone thermal solver ──────────────────────────────────────────
 
 
@@ -68,7 +67,7 @@ def test_sample_collocation_times_requires_grad() -> None:
 # ── ADCS state + integrators ───────────────────────────────────────────
 
 
-def _initial_state(device="cpu") -> "AttitudeState":   # noqa: F821
+def _initial_state(device="cpu") -> AttitudeState:   # noqa: F821
     from dgx_ts_lab.models.physics.adcs import AttitudeState
 
     q = torch.tensor([[0.0, 0.0, 0.0, 1.0]], device=device)   # identity
@@ -122,7 +121,6 @@ def test_so3_preserves_quaternion_norm_better_than_euler() -> None:
     from dgx_ts_lab.models.physics.adcs import (
         AttitudeState,
         SpacecraftInertia,
-        step_euler,
         step_so3,
     )
 

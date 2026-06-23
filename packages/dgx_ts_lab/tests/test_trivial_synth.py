@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import numpy as np
-
 from dgx_ts_core.data import SplitScheme, SplitStrategy, TelemetryDataset
 from dgx_ts_lab.datasets.synthetic import TrivialSyntheticDataset
 

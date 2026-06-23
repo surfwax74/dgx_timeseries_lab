@@ -1,0 +1,9 @@
+# TimeMoE 200M zero-shot — MoE transformer time-series foundation model.
+# Apache 2.0; Tsinghua + Princeton (Shi et al., NeurIPS 2024).
+# Weights community-republished by Maple728 — see security review notes
+# in docs/foundation_model_roadmap.md before deployment.
+_target_key: time_moe
+
+model: Maple728/TimeMoE-200M
+window_length: 512
+patch_len: 16

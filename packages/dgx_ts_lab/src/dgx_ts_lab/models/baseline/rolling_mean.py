@@ -12,7 +12,6 @@ from pathlib import Path
 from typing import Any
 
 import numpy as np
-
 from dgx_ts_core.data import TelemetryDataset, TelemetryWindow
 from dgx_ts_core.models import (
     AnomalyScore,
@@ -120,7 +119,7 @@ class RollingMeanDetector:
         np.savez(path, stds=self._stds, window_size=np.array([self._window_size]))
 
     @classmethod
-    def load(cls, path: Path) -> "RollingMeanDetector":
+    def load(cls, path: Path) -> RollingMeanDetector:
         data = np.load(Path(path))
         ws = int(data["window_size"][0]) if "window_size" in data else 32
         det = cls(window_size=ws)

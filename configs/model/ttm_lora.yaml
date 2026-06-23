@@ -1,0 +1,8 @@
+# TTM r2 + LoRA fine-tuning.
+# TTM's standout property: LoRA fine-tunes in minutes on a 3080 due to
+# its small parameter count. Recommended for the workstation-tier demo.
+_target_key: ttm
+
+model: ibm-granite/granite-timeseries-ttm-r2
+window_length: 512
+patch_len: 16

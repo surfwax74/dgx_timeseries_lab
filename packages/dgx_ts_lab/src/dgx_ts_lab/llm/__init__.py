@@ -18,6 +18,7 @@ one-line config swap; nothing downstream changes.
 
 from __future__ import annotations
 
+from ._mock_backend import MockBackend
 from .backend import (
     AssistantMessage,
     GenerateOptions,
@@ -31,7 +32,6 @@ from .backend import (
     ToolResultMessage,
     UserMessage,
 )
-from ._mock_backend import MockBackend
 from .factory import build_backend
 
 __all__ = [

@@ -1,0 +1,6 @@
+# IBM Granite 3.2 Instruct 8B via Ollama (workstation tier).
+# `ollama pull granite3.2:8b` first.
+kind: ollama
+model_id: granite3.2:8b
+base_url: http://localhost:11434
+timeout_s: 120.0

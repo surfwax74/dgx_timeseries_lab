@@ -91,7 +91,7 @@ class SumCoupling(Component):
     def apply(self, state: GenState, rng: np.random.Generator) -> None:
         t_idx = state.channel_idx(self.target)
         total = np.full(state.n_steps, np.float32(self.offset), dtype=np.float32)
-        for src, gain in zip(self.sources, self.gains):
+        for src, gain in zip(self.sources, self.gains, strict=False):
             s_idx = state.channel_idx(src)
             total += np.float32(gain) * state.data[:, s_idx]
         state.data[:, t_idx] += total

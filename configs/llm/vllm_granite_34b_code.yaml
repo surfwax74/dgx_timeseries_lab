@@ -1,0 +1,13 @@
+# IBM Granite Code Instruct 34B via vLLM (single H200 INT4, TP=2 INT8).
+# Top-end code-specialized Granite variant. Best JSON-mode reliability
+# of any open model at this size class. Apache 2.0.
+#
+# Boot (single H200, INT4 quantized):
+#     scripts/setup_vllm_server.sh /data/llm_weights/granite-34b-code-instruct 1 8000
+# Boot (TP=2 across two H200s, bf16):
+#     scripts/setup_vllm_server.sh /data/llm_weights/granite-34b-code-instruct 2 8000
+kind: vllm
+model_id: ibm-granite/granite-34b-code-instruct
+base_url: http://localhost:8000/v1
+api_key: EMPTY
+timeout_s: 240.0

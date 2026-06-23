@@ -12,13 +12,12 @@ from __future__ import annotations
 
 from pathlib import Path
 
-import numpy as np
-
 # Force a non-interactive backend so this works in headless / CI / DGX runs.
 import matplotlib
+import numpy as np
 
 matplotlib.use("Agg")
-import matplotlib.pyplot as plt   # noqa: E402  must come after backend set
+import matplotlib.pyplot as plt  # noqa: E402  must come after backend set
 
 from .report_schema import ChannelAttribution
 

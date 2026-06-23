@@ -16,11 +16,10 @@ from pathlib import Path
 from typing import Any
 
 import numpy as np
-from omegaconf import DictConfig, OmegaConf
-
 from dgx_ts_core.models import FitMode
 from dgx_ts_core.registry import DATASET_REGISTRY, DETECTOR_REGISTRY, TRAINER_REGISTRY
 from dgx_ts_core.training import TrainConfig
+from omegaconf import DictConfig, OmegaConf
 
 
 @dataclass

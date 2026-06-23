@@ -1,10 +1,10 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from enum import Enum
+from enum import StrEnum
 
 
-class FitMode(str, Enum):
+class FitMode(StrEnum):
     PRETRAIN = "pretrain"
     """From-scratch self-supervised training on unlabeled telemetry."""
 
@@ -15,7 +15,7 @@ class FitMode(str, Enum):
     """No parameter updates; only a threshold is calibrated on val data."""
 
 
-class OutputKind(str, Enum):
+class OutputKind(StrEnum):
     PER_STEP = "per_step"
     """Detector emits one anomaly score per timestep — required for
     sub-window localization."""

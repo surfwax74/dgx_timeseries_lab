@@ -8,7 +8,6 @@ import numpy as np
 import pytest
 import torch
 import yaml
-
 from dgx_ts_core.models import FitMode
 
 
@@ -25,8 +24,8 @@ def _tiny_dataset(n_channels: int = 3):
 
 
 def test_model_card_writer_emits_yaml(tmp_path: Path) -> None:
-    from dgx_ts_lab.serving import write_model_card
     from dgx_ts_core.models import Capabilities, OutputKind
+    from dgx_ts_lab.serving import write_model_card
 
     caps = Capabilities(
         requires_pretraining=True,
@@ -38,7 +37,7 @@ def test_model_card_writer_emits_yaml(tmp_path: Path) -> None:
         supports_export_threshold_baked=True,
     )
     out = tmp_path / "model_card.yaml"
-    card = write_model_card(
+    write_model_card(
         detector_name="test_det",
         detector_version="0.1.0",
         capabilities=caps,
@@ -61,7 +60,7 @@ def test_feature_schema_writer_emits_yaml(tmp_path: Path) -> None:
 
     ds = _tiny_dataset(n_channels=4)
     out = tmp_path / "feature_schema.yaml"
-    schema = write_feature_schema(
+    write_feature_schema(
         channels=ds.channels,
         sample_rate_hz=ds.sample_rate_hz,
         window_length=128,
@@ -96,7 +95,6 @@ def test_patchtst_onnx_export_writes_both_artifacts(tmp_path: Path) -> None:
 def test_patchtst_onnx_runs_via_onnxruntime(tmp_path: Path) -> None:
     """ONNX export + onnxruntime inference + numeric match to in-process detector."""
     import onnxruntime as ort
-
     from dgx_ts_lab.models.from_scratch import PatchTSTMAEDetector
     from dgx_ts_lab.serving import export_detector
 
@@ -119,7 +117,6 @@ def test_patchtst_onnx_runs_via_onnxruntime(tmp_path: Path) -> None:
 
 def test_patchtst_threshold_baked_onnx_returns_bool(tmp_path: Path) -> None:
     import onnxruntime as ort
-
     from dgx_ts_lab.models.from_scratch import PatchTSTMAEDetector
     from dgx_ts_lab.serving import export_detector
 
@@ -139,7 +136,6 @@ def test_patchtst_threshold_baked_onnx_returns_bool(tmp_path: Path) -> None:
 
 def test_sat_tsfm_onnx_export(tmp_path: Path) -> None:
     import onnxruntime as ort
-
     from dgx_ts_lab.models.from_scratch import SatTSFMDetector
     from dgx_ts_lab.serving import export_detector
 
@@ -167,7 +163,7 @@ def test_triton_store_layout(tmp_path: Path) -> None:
         det, output_dir=export_dir, threshold=1.0, n_channels=3, window_length=64,
     )
     triton_store = tmp_path / "triton"
-    written = write_triton_ensemble(
+    write_triton_ensemble(
         model_name="patchtst_mae",
         onnx_paths=onnx_paths,
         triton_store=triton_store,

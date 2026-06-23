@@ -12,7 +12,6 @@ from pathlib import Path
 
 import numpy as np
 import pytest
-
 from dgx_ts_core.data import SplitScheme, SplitStrategy, TelemetryDataset
 from dgx_ts_lab.datasets import NasaTelemanomChannel
 

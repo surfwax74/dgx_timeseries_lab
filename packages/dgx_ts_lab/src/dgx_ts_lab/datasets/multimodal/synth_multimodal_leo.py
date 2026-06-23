@@ -21,15 +21,13 @@ from __future__ import annotations
 from typing import Any
 
 import numpy as np
-
 from dgx_ts_core.data import Channel, Subsystem, Units
 from dgx_ts_core.registry import DATASET_REGISTRY
 
 from ..cyber._tokenizer import CommandTokenizer
-from .event_bucketer import CommandEventBucketer, LogEventBucketer
 from ._log_tokenizer import LogSeverity, LogTokenizer
+from .event_bucketer import CommandEventBucketer, LogEventBucketer
 from .multimodal_dataset import MultiModalDataset
-
 
 _DEFAULT_OPCODES = ("TELEM_REQUEST", "MODE_SET", "PAYLOAD_ACTIVATE", "EPS_LOAD_SHED", "FW_UPLOAD")
 _DEFAULT_PARAMS = ("0", "1", "MODE_SUN", "MODE_ECLIPSE", "SAFE", "NORMAL")

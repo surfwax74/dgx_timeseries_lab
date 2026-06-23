@@ -9,7 +9,7 @@ The two files live side-by-side so:
 from __future__ import annotations
 
 import json
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 from .report_schema import ExplanationReport
@@ -86,7 +86,7 @@ def _render_markdown(r: ExplanationReport) -> str:
 {fault_line}{physics_line}
 **Attribution method:** `{r.attribution_method}`
 **Coupling source:** `{r.coupling_source}`
-**Generated:** {datetime.now(timezone.utc).isoformat()}
+**Generated:** {datetime.now(UTC).isoformat()}
 
 ## Top contributing channels
 

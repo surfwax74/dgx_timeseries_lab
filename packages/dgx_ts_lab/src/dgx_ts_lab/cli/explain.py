@@ -16,15 +16,14 @@ Writes ``explanation_<idx>.md`` + ``explanation_<idx>.json`` per window to
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any
 
 import hydra
 import numpy as np
+from dgx_ts_core.registry import DATASET_REGISTRY, DETECTOR_REGISTRY
 from hydra.utils import get_original_cwd
 from omegaconf import DictConfig, OmegaConf
 
 import dgx_ts_lab  # noqa: F401  registrations
-from dgx_ts_core.registry import DATASET_REGISTRY, DETECTOR_REGISTRY
 
 from ..explanation import (
     ExplanationReport,
@@ -33,12 +32,10 @@ from ..explanation import (
     walk_cascade,
     write_report,
 )
-from ..explanation.report_schema import ChannelAttribution
 from ..explanation.visualize import (
     render_channel_attribution,
     render_score_timeline,
 )
-
 
 _REPO_ROOT = Path(__file__).resolve().parents[5]
 _CONFIG_DIR = _REPO_ROOT / "configs"
@@ -117,10 +114,6 @@ def run(cfg: DictConfig) -> None:
 
     written = []
     for start in target_starts:
-        window = next(
-            iter(dataset.windows(length=window_length, stride=window_length))
-            for _ in [None]
-        )
         # We need the window at this specific start — re-walk to find it.
         chosen = None
         for w in dataset.windows(length=window_length, stride=window_stride):

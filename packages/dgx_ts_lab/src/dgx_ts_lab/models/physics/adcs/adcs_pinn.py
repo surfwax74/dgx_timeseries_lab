@@ -12,18 +12,17 @@ a closed-loop RL setup using the same integrators as the simulator.
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Callable
 
 import torch
 import torch.nn as nn
 
+from .._pinn_base_torch import PINNBackbone
 from .dynamics_euler import step_euler
 from .dynamics_rk4 import step_rk4
 from .dynamics_so3 import step_so3
 from .state import AttitudeState, SpacecraftInertia
-from .._pinn_base_torch import PINNBackbone
-
 
 _INTEGRATORS: dict[str, Callable] = {
     "euler": step_euler,

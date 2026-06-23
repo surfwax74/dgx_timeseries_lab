@@ -22,11 +22,11 @@ import numpy as np
 import pyarrow as pa
 import pyarrow.parquet as pq
 import yaml
+from dgx_ts_core.registry import DATASET_REGISTRY
 from hydra.utils import get_original_cwd
 from omegaconf import DictConfig, OmegaConf
 
 import dgx_ts_lab  # noqa: F401  side-effect: register implementations
-from dgx_ts_core.registry import DATASET_REGISTRY
 
 _REPO_ROOT = Path(__file__).resolve().parents[5]
 _CONFIG_DIR = _REPO_ROOT / "configs"

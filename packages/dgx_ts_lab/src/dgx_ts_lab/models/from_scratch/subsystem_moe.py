@@ -25,7 +25,6 @@ from typing import Any
 import numpy as np
 import torch
 import torch.nn as nn
-
 from dgx_ts_core.data import (
     Channel,
     Subsystem,
@@ -280,7 +279,7 @@ class SubsystemMoEDetector:
         )
 
     @classmethod
-    def load(cls, path: Path) -> "SubsystemMoEDetector":
+    def load(cls, path: Path) -> SubsystemMoEDetector:
         data = torch.load(Path(path), map_location="cpu", weights_only=False)
         det = cls(n_channels=data["n_channels"], **data["config"])
         det._n_channels = data["n_channels"]

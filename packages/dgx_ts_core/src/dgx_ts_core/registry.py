@@ -1,12 +1,9 @@
 from __future__ import annotations
 
 from collections.abc import Callable
-from typing import Generic, TypeVar
-
-T = TypeVar("T")
 
 
-class Registry(Generic[T]):
+class Registry[T]:
     """Simple factory registry.
 
     Implementations register themselves at import time via the @register

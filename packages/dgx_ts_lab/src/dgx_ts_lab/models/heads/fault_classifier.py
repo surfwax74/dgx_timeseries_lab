@@ -12,11 +12,9 @@ from typing import Any
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-
 from dgx_ts_core.registry import HEAD_REGISTRY
 
 from ._base import TaskHead
-
 
 # Class index 0 == "no fault active". Keep in sync with
 # datasets/synthetic/layered/labels.py::FAULT_CLASS_INDEX.

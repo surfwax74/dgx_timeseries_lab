@@ -22,7 +22,6 @@ import json
 from dataclasses import dataclass, field
 from pathlib import Path
 
-
 PAD_TOKEN = 0
 CMD_TOKEN = 1
 UNK_TOKEN = 2
@@ -118,6 +117,6 @@ class CommandTokenizer:
         )
 
     @classmethod
-    def load(cls, path: Path) -> "CommandTokenizer":
+    def load(cls, path: Path) -> CommandTokenizer:
         data = json.loads(Path(path).read_text())
         return cls(opcodes=data["opcodes"], param_values=data["param_values"])

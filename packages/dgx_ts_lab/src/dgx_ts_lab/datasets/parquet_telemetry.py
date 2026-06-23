@@ -14,7 +14,6 @@ from typing import Any
 import numpy as np
 import pyarrow.parquet as pq
 import yaml
-
 from dgx_ts_core.data import (
     Channel,
     DatasetStats,
@@ -149,7 +148,7 @@ class ParquetTelemetryDataset:
                 provenance={"source": self._name, "start": start, "end": end},
             )
 
-    def split(self, scheme: SplitScheme) -> Mapping[str, "ParquetTelemetryDataset"]:
+    def split(self, scheme: SplitScheme) -> Mapping[str, ParquetTelemetryDataset]:
         n = len(self._data)
         n_train = int(scheme.train_frac * n)
         n_val = int(scheme.val_frac * n)

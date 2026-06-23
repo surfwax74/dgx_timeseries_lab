@@ -24,7 +24,6 @@ from pathlib import Path
 from typing import Any
 
 import numpy as np
-
 from dgx_ts_core.data import (
     Channel,
     DatasetStats,
@@ -200,7 +199,7 @@ class NasaTelemanomChannel:
                 provenance={"source": self._name, "start": start, "end": end},
             )
 
-    def split(self, scheme: SplitScheme) -> Mapping[str, "NasaTelemanomChannel"]:
+    def split(self, scheme: SplitScheme) -> Mapping[str, NasaTelemanomChannel]:
         # Canonical Telemanom partition: train.npy → train; test.npy split
         # into val + test by the scheme's val_frac : test_frac ratio.
         n_test = len(self._test_data)

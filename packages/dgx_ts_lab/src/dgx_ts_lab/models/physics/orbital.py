@@ -15,10 +15,8 @@ For any other channel the prediction is 0 (residual = data).
 from __future__ import annotations
 
 import re
-from collections.abc import Iterable
 
 import numpy as np
-
 from dgx_ts_core.data import TelemetryWindow
 
 

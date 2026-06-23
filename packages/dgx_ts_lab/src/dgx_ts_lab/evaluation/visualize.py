@@ -17,9 +17,9 @@ the file extension).
 from __future__ import annotations
 
 import json
+from collections.abc import Iterable, Sequence
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Iterable, Optional, Sequence
 
 import numpy as np
 
@@ -27,8 +27,8 @@ try:
     import matplotlib
     matplotlib.use("Agg")  # non-interactive backend — safe in CI / headless
     import matplotlib.pyplot as plt
-    from matplotlib.figure import Figure
     from matplotlib.axes import Axes
+    from matplotlib.figure import Figure
     _MATPLOTLIB_OK = True
 except ImportError:                                  # pragma: no cover
     _MATPLOTLIB_OK = False
@@ -36,13 +36,11 @@ except ImportError:                                  # pragma: no cover
 
 
 from sklearn.metrics import (
-    auc as _sk_auc,
     average_precision_score,
     precision_recall_curve,
     roc_auc_score,
     roc_curve,
 )
-
 
 # ── Loaders ──────────────────────────────────────────────────────────────
 
@@ -135,7 +133,7 @@ def plot_roc_curves(
     runs: Sequence[ScoredRun],
     title: str = "ROC curves",
     out_path: str | Path | None = None,
-    ax: Optional[Axes] = None,
+    ax: Axes | None = None,
 ) -> Figure | None:
     """Overlay ROC curves for multiple runs. AUC printed in the legend."""
     _ensure_mpl()
@@ -171,7 +169,7 @@ def plot_pr_curves(
     runs: Sequence[ScoredRun],
     title: str = "Precision-Recall curves",
     out_path: str | Path | None = None,
-    ax: Optional[Axes] = None,
+    ax: Axes | None = None,
 ) -> Figure | None:
     """Overlay PR curves. Average-precision (PR-AUC) shown in legend."""
     _ensure_mpl()
@@ -212,7 +210,7 @@ def plot_auc_bar(
     metric: str = "roc_auc",
     title: str | None = None,
     out_path: str | Path | None = None,
-    ax: Optional[Axes] = None,
+    ax: Axes | None = None,
 ) -> Figure | None:
     """Bar chart of AUC (or another scalar metric) per detector.
 
@@ -254,7 +252,7 @@ def plot_auc_bar(
 
     x = np.arange(len(labels))
     bars = ax.bar(x, means, yerr=stds, capsize=4, color="#4c72b0", alpha=0.85)
-    for bar, m in zip(bars, means):
+    for bar, m in zip(bars, means, strict=False):
         if not np.isnan(m):
             ax.text(
                 bar.get_x() + bar.get_width() / 2,
@@ -281,7 +279,7 @@ def plot_score_timeline(
     threshold: float | None = None,
     title: str | None = None,
     out_path: str | Path | None = None,
-    ax: Optional[Axes] = None,
+    ax: Axes | None = None,
 ) -> Figure | None:
     """Per-step score trace, with anomaly windows shaded and threshold dashed.
 
@@ -331,7 +329,7 @@ def plot_parameter_sweep(
     metric: str = "roc_auc",
     title: str | None = None,
     out_path: str | Path | None = None,
-    ax: Optional[Axes] = None,
+    ax: Axes | None = None,
 ) -> Figure | None:
     """Plot metric vs. a swept parameter for one or more detectors.
 

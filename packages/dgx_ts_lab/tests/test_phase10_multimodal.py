@@ -15,9 +15,7 @@ from __future__ import annotations
 import numpy as np
 import pytest
 import torch
-
 from dgx_ts_core.models import FitMode
-
 
 # ── Log tokenizer ──────────────────────────────────────────────────────
 
@@ -103,11 +101,13 @@ def test_log_bucketer_max_severity() -> None:
 # ── MultiModalDataset ─────────────────────────────────────────────────
 
 
-def _build_multimodal(n_seconds: int = 200) -> "MultiModalDataset":  # type: ignore[name-defined]
+def _build_multimodal(n_seconds: int = 200):
+    """Build a tiny MultiModalDataset for tests. Return type left unannotated
+    to avoid importing the heavy module at module level."""
+    from dgx_ts_lab.datasets.multimodal.multimodal_dataset import MultiModalDataset
     from dgx_ts_lab.datasets.multimodal.synth_multimodal_leo import (
         generate_multimodal_leo,
     )
-    from dgx_ts_lab.datasets.multimodal.multimodal_dataset import MultiModalDataset
 
     kwargs = generate_multimodal_leo(n_seconds=n_seconds, seed=0, n_telemetry_channels=4)
     return MultiModalDataset(**kwargs)

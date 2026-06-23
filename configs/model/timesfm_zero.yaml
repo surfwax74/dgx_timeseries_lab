@@ -1,0 +1,8 @@
+# TimesFM 2.0 zero-shot — no fine-tuning, just threshold calibration.
+# Google Research; Apache 2.0; ~500M params; decoder-only patched transformer.
+# Falls back to a small untrained transformer if weights missing locally.
+_target_key: timesfm
+
+model: google/timesfm-2.0-500m-pytorch
+window_length: 512
+patch_len: 32

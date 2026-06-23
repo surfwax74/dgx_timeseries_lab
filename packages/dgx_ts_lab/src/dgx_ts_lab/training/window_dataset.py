@@ -10,9 +10,8 @@ from __future__ import annotations
 
 import numpy as np
 import torch
-from torch.utils.data import Dataset
-
 from dgx_ts_core.data import TelemetryDataset
+from torch.utils.data import Dataset
 
 
 class WindowTorchDataset(Dataset):

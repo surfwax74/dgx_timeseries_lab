@@ -1,0 +1,6 @@
+# Microsoft Phi-4 14B via Ollama (workstation tier).
+# `ollama pull phi4:14b` first.
+kind: ollama
+model_id: phi4:14b
+base_url: http://localhost:11434
+timeout_s: 120.0

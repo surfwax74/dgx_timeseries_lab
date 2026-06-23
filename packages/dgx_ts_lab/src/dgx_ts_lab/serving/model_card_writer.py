@@ -14,7 +14,6 @@ from pathlib import Path
 from typing import Any
 
 import yaml
-
 from dgx_ts_core.export import ModelCard
 from dgx_ts_core.models import Capabilities
 

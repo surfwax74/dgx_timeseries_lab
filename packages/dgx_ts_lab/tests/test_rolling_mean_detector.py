@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import numpy as np
 import pytest
-
 from dgx_ts_core.models import AnomalyDetector, FitMode, OutputKind
 from dgx_ts_lab.datasets.synthetic import TrivialSyntheticDataset
 from dgx_ts_lab.models.baseline import RollingMeanDetector

@@ -1,0 +1,39 @@
+# @package _global_
+# Smoke bake-off proving the three new TSFM adapters (TimesFM, TTM,
+# TimeMoE) run end-to-end alongside the rolling_mean baseline.
+#
+# All three will use their untrained-fallback path since no HF weights
+# are sneakernet'd in on this CPU box — but that exercises the full
+# adapter contract: registration, fit, compute_loss, compute_score_batch,
+# npz output, leaderboard row.
+defaults:
+  - override /trainer: cpu
+
+trainer:
+  max_epochs: 1
+  batch_size: 8
+  window_length: 64
+  window_stride: 64
+  learning_rate: 0.001
+
+suite:
+  name: tsfm_smoke
+  mode: pretrain
+
+  detectors:
+    - {key: rolling_mean, params: {}}
+    - {key: timesfm,  params: {window_length: 64, patch_len: 16}}
+    - {key: ttm,      params: {window_length: 64, patch_len: 16}}
+    - {key: time_moe, params: {window_length: 64, patch_len: 16}}
+
+  datasets:
+    - key: trivial_synth
+      params:
+        n_samples: 1024
+        n_channels: 3
+        anomaly_rate: 0.03
+        anomaly_magnitude_sigmas: 6.0
+
+  seeds: [0]
+
+output_dir: benchmark_reports

@@ -13,6 +13,7 @@ from hydra.utils import get_original_cwd
 from omegaconf import DictConfig, OmegaConf
 
 import dgx_ts_lab  # noqa: F401  side-effect: register implementations
+
 from ..evaluation.benchmark import run_benchmark
 
 _REPO_ROOT = Path(__file__).resolve().parents[5]

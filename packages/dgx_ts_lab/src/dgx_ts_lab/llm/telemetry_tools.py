@@ -20,15 +20,15 @@ dataset, recent scores, RAG index, and detector handle.
 from __future__ import annotations
 
 import json
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any
 
 import numpy as np
 
 from .backend import ToolCall, ToolDef
 from .rag import CosineRAGIndex
-
 
 # ── ToolRegistry ─────────────────────────────────────────────────────────
 

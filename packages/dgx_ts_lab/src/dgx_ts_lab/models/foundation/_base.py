@@ -23,7 +23,6 @@ from typing import Any
 import numpy as np
 import torch
 import torch.nn as nn
-
 from dgx_ts_core.data import TelemetryDataset, TelemetryWindow
 from dgx_ts_core.models import (
     AnomalyScore,
@@ -194,7 +193,7 @@ class ForecastingDetector:
         )
 
     @classmethod
-    def load(cls, path: Path) -> "ForecastingDetector":
+    def load(cls, path: Path) -> ForecastingDetector:
         # Subclasses override — base can't reconstruct the module type.
         raise NotImplementedError(
             f"{cls.__name__} must override load() to rebuild the module type"

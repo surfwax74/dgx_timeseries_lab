@@ -16,7 +16,7 @@ from . import (  # noqa: F401  side-effect: register synth_multimodal_leo
     event_bucketer,
     synth_multimodal_leo,
 )
-from ._log_tokenizer import LogTokenizer, LogSeverity
+from ._log_tokenizer import LogSeverity, LogTokenizer
 from .event_bucketer import CommandEventBucketer, LogEventBucketer
 from .multimodal_dataset import MultiModalDataset
 

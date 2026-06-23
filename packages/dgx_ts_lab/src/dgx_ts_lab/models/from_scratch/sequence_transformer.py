@@ -17,7 +17,6 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-
 from dgx_ts_core.data import TelemetryDataset, TelemetryWindow
 from dgx_ts_core.models import (
     AnomalyScore,
@@ -67,7 +66,7 @@ class SequenceTransformerModule(nn.Module):
     def forward(self, token_ids: torch.Tensor) -> torch.Tensor:
         # token_ids: (B, T) long. Returns logits (B, T, vocab).
         T = token_ids.shape[1]
-        if T > self.max_seq_len:
+        if self.max_seq_len < T:
             token_ids = token_ids[:, : self.max_seq_len]
             T = self.max_seq_len
         emb = self.token_emb(token_ids) + self.pos_emb[:, :T, :]
@@ -236,7 +235,7 @@ class SequenceTransformerDetector:
         )
 
     @classmethod
-    def load(cls, path: Path) -> "SequenceTransformerDetector":
+    def load(cls, path: Path) -> SequenceTransformerDetector:
         data = torch.load(Path(path), map_location="cpu", weights_only=False)
         det = cls(
             mask_prob=data["mask_prob"],

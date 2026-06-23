@@ -14,13 +14,13 @@ from __future__ import annotations
 from pathlib import Path
 
 import hydra
+from dgx_ts_core.models import FitMode
+from dgx_ts_core.registry import DATASET_REGISTRY, DETECTOR_REGISTRY, TRAINER_REGISTRY
+from dgx_ts_core.training import TrainConfig
 from omegaconf import DictConfig, OmegaConf
 
 # Side-effect imports — trigger self-registration of bundled implementations.
 import dgx_ts_lab  # noqa: F401
-from dgx_ts_core.models import FitMode
-from dgx_ts_core.registry import DATASET_REGISTRY, DETECTOR_REGISTRY, TRAINER_REGISTRY
-from dgx_ts_core.training import TrainConfig
 
 from ..tracking import MLflowLogger
 

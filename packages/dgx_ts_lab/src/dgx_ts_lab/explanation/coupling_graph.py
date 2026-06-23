@@ -16,10 +16,8 @@ cascade walker returns no upstream causes.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any
 
 import numpy as np
-
 from dgx_ts_core.data import TelemetryDataset
 
 
@@ -79,7 +77,7 @@ def _try_declared(dataset: TelemetryDataset) -> CouplingGraph | None:
             )
         elif kind == "sum_coupling":
             tgt = comp.target
-            for src, gain in zip(comp.sources, comp.gains):
+            for src, gain in zip(comp.sources, comp.gains, strict=False):
                 edges.setdefault(tgt, []).append(
                     CouplingEdge(source=src, target=tgt, weight=float(gain), lag_steps=0)
                 )

@@ -15,9 +15,7 @@ treats it identically.
 from __future__ import annotations
 
 import numpy as np
-
 from dgx_ts_core.data import TelemetryWindow
-
 
 _MODULUS_HINT = """\
 NVIDIA Modulus is not installed. Install via:

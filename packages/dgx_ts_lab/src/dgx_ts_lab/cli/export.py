@@ -19,11 +19,11 @@ from __future__ import annotations
 from pathlib import Path
 
 import hydra
+from dgx_ts_core.registry import DATASET_REGISTRY, DETECTOR_REGISTRY
 from hydra.utils import get_original_cwd
 from omegaconf import DictConfig, OmegaConf
 
 import dgx_ts_lab  # noqa: F401  registrations
-from dgx_ts_core.registry import DATASET_REGISTRY, DETECTOR_REGISTRY
 
 from ..serving import (
     export_detector,
@@ -75,11 +75,8 @@ def run(cfg: DictConfig) -> None:
     model_cfg = OmegaConf.to_container(cfg.model, resolve=True)
     assert isinstance(model_cfg, dict)
     model_key = model_cfg.pop("_target_key")
-    # Use the detector's load() to reconstruct from checkpoint
-    detector_cls = DETECTOR_REGISTRY.get(model_key).__wrapped__ if hasattr(
-        DETECTOR_REGISTRY.get(model_key), "__wrapped__"
-    ) else type(DETECTOR_REGISTRY.create(model_key, **model_cfg))
-    # Simpler: build, then load_state_dict-style restore via classmethod load()
+    # Build via the registry factory, then restore weights via the
+    # detector's classmethod load() (Phase 5 contract).
     detector_factory = DETECTOR_REGISTRY.get(model_key)
     detector_for_class = detector_factory(**model_cfg)
     detector = type(detector_for_class).load(ckpt_path)
@@ -108,7 +105,7 @@ def run(cfg: DictConfig) -> None:
         print(f"  - {name}: {path.relative_to(output_dir.parent)}")
 
     # ── 2. Model card ────────────────────────────────────────────────
-    print(f"==> Writing model_card.yaml")
+    print("==> Writing model_card.yaml")
     write_model_card(
         detector_name=detector.name,
         detector_version=str(cfg.get("version", "0.1.0")),
@@ -123,7 +120,7 @@ def run(cfg: DictConfig) -> None:
     )
 
     # ── 3. Feature schema ────────────────────────────────────────────
-    print(f"==> Writing feature_schema.yaml")
+    print("==> Writing feature_schema.yaml")
     write_feature_schema(
         channels=dataset.channels,
         sample_rate_hz=dataset.sample_rate_hz,

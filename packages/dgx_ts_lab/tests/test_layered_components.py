@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import numpy as np
-
 from dgx_ts_core.data import Channel, Subsystem, Units
 from dgx_ts_lab.datasets.synthetic.layered import (
     LayeredSyntheticDataset,

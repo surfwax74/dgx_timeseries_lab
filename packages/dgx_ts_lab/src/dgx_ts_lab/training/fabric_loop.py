@@ -17,15 +17,13 @@ single-GPU to FSDP in Phase 4 is a config change, not a code change.
 from __future__ import annotations
 
 import time
-from pathlib import Path
 
 import lightning as L
 import torch
-from torch.utils.data import DataLoader
-
 from dgx_ts_core.data import TelemetryDataset
 from dgx_ts_core.models import FitMode, FitResult
 from dgx_ts_core.training import TrainConfig
+from torch.utils.data import DataLoader
 
 from .window_dataset import WindowTorchDataset
 
@@ -52,8 +50,13 @@ def fabric_fit(
     and val/test metric calculation against the trained detector.
     """
     # ── pre-flight: verify the detector exposes the neural-detector surface ──
+    # Check on the *class*, not the instance, so that `module` properties which
+    # raise RuntimeError("not built yet") don't crash hasattr(). This matters
+    # for the foundation/ adapters (Chronos, TimesFM, TTM, TimeMoE) where
+    # `module` is a property that only resolves after fit().
+    det_cls = type(detector)
     for attr in ("module", "compute_loss", "compute_score_batch"):
-        if not hasattr(detector, attr):
+        if not hasattr(det_cls, attr):
             raise AttributeError(
                 f"detector {detector.name!r} declares requires_pretraining=True "
                 f"but is missing .{attr}. Neural detectors must expose "
@@ -68,8 +71,9 @@ def fabric_fit(
     strategy: str | object = config.strategy
     if config.strategy == "fsdp":
         try:
-            from .strategies.fsdp import build_fsdp_strategy_kwargs
             from lightning.fabric.strategies import FSDPStrategy
+
+            from .strategies.fsdp import build_fsdp_strategy_kwargs
 
             fsdp_kwargs = build_fsdp_strategy_kwargs(dict(config.extra))
             strategy = FSDPStrategy(**{k: v for k, v in fsdp_kwargs.items() if v is not None})

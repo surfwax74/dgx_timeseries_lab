@@ -23,23 +23,19 @@ from pathlib import Path
 
 import numpy as np
 import pytest
-
 from dgx_ts_lab.llm import (
     AssistantMessage,
     GenerateOptions,
     GenerateResult,
     LLMBackend,
-    Message,
     MockBackend,
     Role,
     SystemMessage,
     ToolCall,
-    ToolDef,
     ToolResultMessage,
     UserMessage,
     build_backend,
 )
-
 
 # ── Message / Result types ─────────────────────────────────────────────
 

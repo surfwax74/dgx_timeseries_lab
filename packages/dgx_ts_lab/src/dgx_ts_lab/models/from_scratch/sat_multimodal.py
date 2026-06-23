@@ -23,7 +23,6 @@ from typing import Any
 import numpy as np
 import torch
 import torch.nn as nn
-
 from dgx_ts_core.data import TelemetryDataset, TelemetryWindow
 from dgx_ts_core.models import (
     AnomalyScore,
@@ -39,7 +38,6 @@ from ._multimodal_blocks import (
     PerModalitySelfAttn,
     SharedCrossModalStack,
 )
-
 
 # Channel grouping conventions — must match MultiModalDataset emit order.
 COMMAND_FEATURES = 3
@@ -338,14 +336,12 @@ class SatMultiModalDetector:
 
         # Per-modality masked recon MSE
         def _masked_mse(pred, target, mask, n_features_per_token):
-            if mask is None:
-                return ((pred - target) ** 2).mean()
-            # mask shape: (B_eff, N) where N = n_patches
-            # Expand to per-step (broadcasting each patch's mask to its patch_len steps)
-            B_eff = pred.shape[0] if pred.dim() == 3 else mask.shape[0]
-            # For telemetry we don't have per-step mask; treat mask as patch-level
-            # Simpler: compute MSE on all timesteps, weight by mask presence ratio
-            # For now just use mean of all reconstruction error (mask info goes unused).
+            # Mask shape is (B_eff, N) where N = n_patches. A future iteration
+            # could expand it to per-step weights by broadcasting each patch's
+            # mask flag across its patch_len timesteps, then computing a
+            # mask-weighted MSE. For now we just take the mean across all
+            # timesteps — simpler, and the per-patch reconstruction loss is
+            # already a good training signal.
             return ((pred - target) ** 2).mean()
 
         l_tel = _masked_mse(out["tel_recon_norm"], out["tel_norm"], out["tel_mask"], 1)
@@ -460,7 +456,7 @@ class SatMultiModalDetector:
         )
 
     @classmethod
-    def load(cls, path: Path) -> "SatMultiModalDetector":
+    def load(cls, path: Path) -> SatMultiModalDetector:
         data = torch.load(Path(path), map_location="cpu", weights_only=False)
         det = cls(n_telemetry_channels=data["n_telemetry_channels"], **data["config"])
         det._n_tel = data["n_telemetry_channels"]

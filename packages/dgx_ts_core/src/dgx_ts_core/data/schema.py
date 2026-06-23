@@ -1,10 +1,10 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from enum import Enum
+from enum import StrEnum
 
 
-class Subsystem(str, Enum):
+class Subsystem(StrEnum):
     EPS = "eps"            # Electrical Power System
     TCS = "tcs"            # Thermal Control System
     ADCS = "adcs"          # Attitude Determination & Control
@@ -16,7 +16,7 @@ class Subsystem(str, Enum):
     UNKNOWN = "unknown"
 
 
-class Units(str, Enum):
+class Units(StrEnum):
     VOLT = "V"
     AMP = "A"
     WATT = "W"

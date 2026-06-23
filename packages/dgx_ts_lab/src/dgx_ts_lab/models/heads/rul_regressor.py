@@ -13,7 +13,6 @@ from typing import Any
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-
 from dgx_ts_core.registry import HEAD_REGISTRY
 
 from ._base import TaskHead

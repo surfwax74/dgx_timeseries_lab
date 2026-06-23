@@ -6,12 +6,18 @@ Cross-cutting documentation. Per-module documentation lives next to the code as 
 
 | File | Read when… |
 |---|---|
+| [`experiments_cookbook.md`](experiments_cookbook.md) | **You need the exact command for a phase / experiment / tier.** Quick-reference table + per-phase recipes + Hydra override cheat-sheet. **Start here for "how do I run X?"**|
+| [`../packages/dgx_ts_lab/src/dgx_ts_lab/models/README.md`](../packages/dgx_ts_lab/src/dgx_ts_lab/models/README.md) | **You need to know what algorithm each detector implements.** 16 detectors + 3 task heads, organized by algorithm family (classical / from-scratch transformers / foundation models / behavior / physics-informed). Includes capabilities matrix and "when to use what" cheat-sheet. |
 | [`architecture.md`](architecture.md) | First time touching the codebase. Explains how the pieces fit. |
 | [`adding_a_dataset.md`](adding_a_dataset.md) | You want a new `TelemetryDataset` implementation. |
 | [`adding_a_model.md`](adding_a_model.md) | You want a new `AnomalyDetector` implementation. |
 | [`air_gapped_setup.md`](air_gapped_setup.md) | Setting up the DGX (no internet). Covers NASA dataset provisioning. |
 | [`foundation_model_provisioning.md`](foundation_model_provisioning.md) | Provisioning Chronos/MOMENT/Moirai weights — dev (data/models/) and DGX (MLflow Registry) paths. |
+| [`foundation_model_roadmap.md`](foundation_model_roadmap.md) | **Backlog for next-phase model additions** — TimesFM, TTM, TimeMoE (TS foundations), Granite-Code + Phi-4 (LLM co-pilot), Sparse Autoencoders (Phase 7 interpretability), ETS classical baseline. HF repos, sizes, integration effort, air-gap sneakernet plan. |
+| [`forecasting_rul_bakeoff.md`](forecasting_rul_bakeoff.md) | **Scoping doc for a second bake-off** — distinct from the AD bake-off. Forecasting + RUL leaderboard covering Prophet, ETS, Chronos, Moirai, MOMENT, TimesFM, TTM, and Sat-TSFM-multi-task. Two demo scenarios (battery degradation, fuel projection). ~1 week effort, 5 tasks scoped. |
 | [`lift_to_mlops.md`](lift_to_mlops.md) | You're exporting a trained detector for `mm_mlops` to consume. |
+| [`llm_ops_copilot.md`](llm_ops_copilot.md) | Setting up / operating the Phase 11 LLM ops co-pilot (4 backends, RAG, tools, procedure synthesis). |
+| [`serving_deployment.md`](serving_deployment.md) | Deploying detectors via Triton (exported ONNX bundles). |
 
 ## Deployment playbooks
 

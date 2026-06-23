@@ -38,7 +38,6 @@ from typing import Any
 import numpy as np
 import torch
 import torch.nn as nn
-
 from dgx_ts_core.data import TelemetryDataset, TelemetryWindow
 from dgx_ts_core.models import (
     AnomalyScore,
@@ -321,7 +320,7 @@ class SatTSFMDetector:
         )
 
     @classmethod
-    def load(cls, path: Path) -> "SatTSFMDetector":
+    def load(cls, path: Path) -> SatTSFMDetector:
         data = torch.load(Path(path), map_location="cpu", weights_only=False)
         det = cls(n_channels=data["n_channels"], **data["config"])
         det._n_channels = data["n_channels"]

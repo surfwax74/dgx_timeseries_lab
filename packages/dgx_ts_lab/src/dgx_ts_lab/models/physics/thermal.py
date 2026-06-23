@@ -19,9 +19,7 @@ from __future__ import annotations
 import re
 
 import numpy as np
-
 from dgx_ts_core.data import TelemetryWindow
-
 
 # Per-channel-family thermal model parameters. Tuned to match the
 # layered_synth `ThermalDutyCycle` defaults for our LEO EPS preset.

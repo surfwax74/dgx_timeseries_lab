@@ -1,10 +1,10 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from enum import Enum
+from enum import StrEnum
 
 
-class SplitStrategy(str, Enum):
+class SplitStrategy(StrEnum):
     TEMPORAL = "temporal"
     """Chronological cut — first train_frac of time → train, etc.
     Default for time-series; preserves temporal causality."""

@@ -8,7 +8,6 @@ thin convenience wrapper that adapts our config knobs into peft's API.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any
 
 import torch.nn as nn
 

@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-from enum import Enum
+from enum import StrEnum
 
 
-class ExportFormat(str, Enum):
+class ExportFormat(StrEnum):
     ONNX = "onnx"
     TORCHSCRIPT = "torchscript"
     TRITON = "triton"

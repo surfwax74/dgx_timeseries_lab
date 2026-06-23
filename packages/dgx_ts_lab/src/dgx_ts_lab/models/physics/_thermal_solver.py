@@ -24,7 +24,6 @@ from typing import Any
 
 import numpy as np
 
-
 # Solar constant (W/m^2) at 1 AU
 SOLAR_FLUX_AU = 1361.0
 # Stefan-Boltzmann constant (W/m^2/K^4)

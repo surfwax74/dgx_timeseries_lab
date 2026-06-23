@@ -1,0 +1,10 @@
+# TimeMoE 200M + LoRA fine-tuning.
+# Caveat: LoRA only adapts the attention matrices; expert FFNs stay
+# frozen. This is the standard MoE PEFT pattern but reduces the effective
+# rank of the fine-tune compared to dense models. Configure target_modules
+# in trainer.peft to attention-only names.
+_target_key: time_moe
+
+model: Maple728/TimeMoE-200M
+window_length: 512
+patch_len: 16

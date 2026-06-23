@@ -27,12 +27,10 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-
-from dgx_ts_core.data import TelemetryDataset, TelemetryWindow
+from dgx_ts_core.data import TelemetryWindow
 from dgx_ts_core.models import (
     AnomalyScore,
     Capabilities,
-    FitMode,
     FitResult,
     OutputKind,
 )
@@ -267,7 +265,7 @@ class DCdetectorDetector:
         )
 
     @classmethod
-    def load(cls, path: Path) -> "DCdetectorDetector":
+    def load(cls, path: Path) -> DCdetectorDetector:
         data = torch.load(Path(path), map_location="cpu", weights_only=False)
         det = cls(n_channels=data["n_channels"], **data["config"])
         det._n_channels = data["n_channels"]

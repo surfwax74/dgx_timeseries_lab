@@ -12,7 +12,6 @@ from pathlib import Path
 
 import pytest
 import torch
-
 from dgx_ts_core.models import AnomalyDetector, FitMode, OutputKind
 
 
@@ -167,12 +166,12 @@ def test_moirai_fit_raises_clearly_without_uni2ts() -> None:
 
 def test_lora_wrap_reduces_trainable_params() -> None:
     """LoRA wrapping should drastically reduce trainable param count."""
+    from dgx_ts_lab.models.foundation import ChronosDetector
     from dgx_ts_lab.training.peft import (
         LoraConfig,
         trainable_parameter_count,
         wrap_with_lora,
     )
-    from dgx_ts_lab.models.foundation import ChronosDetector
 
     det = ChronosDetector(window_length=64, n_quantile_bins=128)
     det.fit(_tiny_dataset(), FitMode.PRETRAIN, {})

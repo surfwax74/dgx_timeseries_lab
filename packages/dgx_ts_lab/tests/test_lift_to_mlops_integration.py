@@ -19,12 +19,9 @@ only EXERCISES the consumer-side imports. A separate
 
 from __future__ import annotations
 
-import sys
 from pathlib import Path
 
 import numpy as np
-import pytest
-
 
 # Track imports done by the "consumer" side of the test so we can fail
 # loudly if something accidentally touches dgx_ts_lab.
@@ -55,14 +52,14 @@ def _consumer_load_and_score(artifact_dir: Path, window: np.ndarray) -> np.ndarr
     import yaml
 
     # Load model_card.yaml — must deserialize into dgx_ts_core types
-    from dgx_ts_core.export import FeatureSchema, ModelCard
     from dgx_ts_core.models import Capabilities, OutputKind
 
     card_dict = yaml.safe_load((artifact_dir / "model_card.yaml").read_text())
-    # Reconstruct the Capabilities object
+    # Reconstruct the Capabilities object (round-trip check that the YAML
+    # schema is consumable by dgx_ts_core without needing torch installed)
     cap_dict = dict(card_dict["capabilities"])
     cap_dict["output_kind"] = OutputKind(cap_dict["output_kind"])
-    capabilities = Capabilities(**cap_dict)
+    Capabilities(**cap_dict)
 
     # Load feature_schema.yaml
     schema_dict = yaml.safe_load((artifact_dir / "feature_schema.yaml").read_text())
@@ -79,7 +76,6 @@ def test_lift_contract_end_to_end(tmp_path: Path) -> None:
     """Full round-trip: train → export → consumer-side load → score → compare."""
     import torch
     from dgx_ts_core.models import FitMode
-
     from dgx_ts_lab.datasets.synthetic import TrivialSyntheticDataset
     from dgx_ts_lab.models.from_scratch import PatchTSTMAEDetector
     from dgx_ts_lab.serving import (
@@ -127,10 +123,8 @@ def test_lift_contract_end_to_end(tmp_path: Path) -> None:
 
 def test_artifact_files_self_describe(tmp_path: Path) -> None:
     """All three artifacts must be human-readable YAML or standard ONNX."""
-    import torch
     import yaml
     from dgx_ts_core.models import FitMode
-
     from dgx_ts_lab.datasets.synthetic import TrivialSyntheticDataset
     from dgx_ts_lab.models.from_scratch import PatchTSTMAEDetector
     from dgx_ts_lab.serving import (

@@ -14,7 +14,6 @@ from types import TracebackType
 from typing import Any
 
 import mlflow
-
 from dgx_ts_core.models import FitResult
 
 
@@ -36,7 +35,7 @@ class MLflowLogger(AbstractContextManager["MLflowLogger"]):
         mlflow.set_experiment(experiment_name)
         self._active_run = None
 
-    def __enter__(self) -> "MLflowLogger":
+    def __enter__(self) -> MLflowLogger:
         self._active_run = mlflow.start_run(run_name=self._run_name, tags=self._tags)
         return self
 

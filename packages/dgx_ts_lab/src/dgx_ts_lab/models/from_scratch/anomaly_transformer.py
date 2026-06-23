@@ -32,7 +32,6 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-
 from dgx_ts_core.data import TelemetryDataset, TelemetryWindow
 from dgx_ts_core.models import (
     AnomalyScore,
@@ -232,7 +231,7 @@ class AnomalyTransformerDetector:
     ) -> torch.Tensor:
         """Mean over layers and heads of |sym-KL(prior, series)|. Returns (B, T)."""
         per_layer = []
-        for p, s in zip(priors, series):
+        for p, s in zip(priors, series, strict=False):
             d = _symmetric_kl(p, s).mean(dim=1)  # (B, T) — avg over heads
             per_layer.append(d)
         return torch.stack(per_layer, dim=0).mean(dim=0)
@@ -332,7 +331,7 @@ class AnomalyTransformerDetector:
         )
 
     @classmethod
-    def load(cls, path: Path) -> "AnomalyTransformerDetector":
+    def load(cls, path: Path) -> AnomalyTransformerDetector:
         data = torch.load(Path(path), map_location="cpu", weights_only=False)
         det = cls(
             n_channels=data["n_channels"],

@@ -15,7 +15,6 @@ from pathlib import Path
 
 import numpy as np
 import pytest
-
 from dgx_ts_lab.evaluation.visualize import (
     ScoredRun,
     load_benchmark_runs,
@@ -26,7 +25,6 @@ from dgx_ts_lab.evaluation.visualize import (
     plot_score_timeline,
     render_benchmark_report_figures,
 )
-
 
 # ── Fixtures ─────────────────────────────────────────────────────────────
 

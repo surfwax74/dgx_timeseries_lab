@@ -5,19 +5,16 @@ from __future__ import annotations
 from pathlib import Path
 
 import numpy as np
-import pytest
 import torch
-
-from dgx_ts_core.data import SplitScheme, SplitStrategy, TelemetryDataset
+from dgx_ts_core.data import TelemetryDataset
 from dgx_ts_core.models import AnomalyDetector, FitMode, OutputKind
-
 
 # ── Tokenizer ──────────────────────────────────────────────────────────
 
 
 def test_command_tokenizer_roundtrip() -> None:
     from dgx_ts_lab.datasets.cyber import CommandTokenizer
-    from dgx_ts_lab.datasets.cyber._tokenizer import CMD_TOKEN, MASK_TOKEN, N_SPECIAL, PAD_TOKEN
+    from dgx_ts_lab.datasets.cyber._tokenizer import CMD_TOKEN, N_SPECIAL
 
     tok = CommandTokenizer(opcodes=["OP_A", "OP_B"], param_values=["1", "2", "FOO"])
     assert tok.vocab_size == N_SPECIAL + 2 + 3

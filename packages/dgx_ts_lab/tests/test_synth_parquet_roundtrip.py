@@ -12,7 +12,6 @@ from pathlib import Path
 import numpy as np
 import pyarrow.parquet as pq
 import yaml
-
 from dgx_ts_lab.datasets import ParquetTelemetryDataset
 from dgx_ts_lab.datasets.synthetic import TrivialSyntheticDataset
 
@@ -91,7 +90,7 @@ def test_synth_then_load_preserves_data(tmp_path: Path) -> None:
     np.testing.assert_array_equal(loaded._labels, src._labels)
     np.testing.assert_array_equal(loaded._timestamps, src._timestamps)
     assert len(loaded.channels) == len(src.channels)
-    assert all(a.name == b.name for a, b in zip(loaded.channels, src.channels))
+    assert all(a.name == b.name for a, b in zip(loaded.channels, src.channels, strict=False))
 
 
 def test_loaded_dataset_implements_protocol(tmp_path: Path) -> None:

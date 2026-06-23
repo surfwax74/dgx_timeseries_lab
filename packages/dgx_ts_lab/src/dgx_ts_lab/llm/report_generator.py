@@ -15,12 +15,10 @@ section.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Optional
 
 from .backend import GenerateOptions, LLMBackend
 from .copilot import Copilot
 from .telemetry_tools import ToolRegistry
-
 
 _REPORT_SYSTEM = (
     "You are a satellite-operations report writer. You are given a raw "

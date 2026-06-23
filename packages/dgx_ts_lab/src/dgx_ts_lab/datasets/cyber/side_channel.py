@@ -17,7 +17,6 @@ from collections.abc import Callable, Iterator, Mapping
 from typing import Any
 
 import numpy as np
-
 from dgx_ts_core.data import (
     Channel,
     DatasetStats,
@@ -28,7 +27,6 @@ from dgx_ts_core.data import (
     Units,
 )
 from dgx_ts_core.registry import DATASET_REGISTRY
-
 
 DEFAULT_FEATURE_FUNCS = ("mean", "std", "max_abs", "energy")
 
@@ -151,7 +149,7 @@ class SideChannelDataset:
                 provenance={"source": self._name, "start": start, "end": end},
             )
 
-    def split(self, scheme: SplitScheme) -> Mapping[str, "SideChannelDataset"]:
+    def split(self, scheme: SplitScheme) -> Mapping[str, SideChannelDataset]:
         n = len(self._data)
         n_train = int(scheme.train_frac * n)
         n_val = int(scheme.val_frac * n)

@@ -32,6 +32,10 @@ The Phase 0 smoke run completes in well under two minutes on CPU, fits
 `RollingMeanDetector` against a trivial sine+spike synthetic dataset, and
 logs the run to `mlruns/`.
 
+**Looking for "how do I run X?"** → [`docs/experiments_cookbook.md`](docs/experiments_cookbook.md)
+is the authoritative recipe list — one entry per phase, per experiment,
+per tier, with exact commands, wall-clock estimates, and expected outputs.
+
 ## The three contracts
 
 All hot-swap is built on three small Protocols defined in `dgx_ts_core`:

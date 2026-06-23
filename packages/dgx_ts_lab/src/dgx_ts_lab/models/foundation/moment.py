@@ -20,7 +20,6 @@ from typing import Any
 
 import torch
 import torch.nn as nn
-
 from dgx_ts_core.registry import DETECTOR_REGISTRY
 
 from ._base import ForecastingDetector
@@ -156,7 +155,7 @@ class MomentDetector(ForecastingDetector):
         )
 
     @classmethod
-    def load(cls, path: Path) -> "MomentDetector":
+    def load(cls, path: Path) -> MomentDetector:
         data = torch.load(Path(path), map_location="cpu", weights_only=False)
         det = cls(
             model=data["model_name"],

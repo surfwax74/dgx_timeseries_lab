@@ -1,0 +1,9 @@
+# TimesFM 2.0 + LoRA fine-tuning on the encoder layers.
+# Same backbone as timesfm_zero.yaml; LoRA adapters are configured via
+# trainer.peft (rank, alpha, dropout) — see configs/trainer/*.yaml for
+# the standard LoRA settings used across foundation models.
+_target_key: timesfm
+
+model: google/timesfm-2.0-500m-pytorch
+window_length: 512
+patch_len: 32

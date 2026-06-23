@@ -22,13 +22,11 @@ from __future__ import annotations
 from typing import Any
 
 import numpy as np
-
 from dgx_ts_core.data import Subsystem
 from dgx_ts_core.registry import DATASET_REGISTRY
 
 from ...cyber._tokenizer import CommandTokenizer
 from ...cyber.command_sequence import CommandSequenceDataset
-
 
 # Realistic-sounding opcode classes. Kept synthetic to stay air-gap clean.
 ROUTINE_OPCODES = ("TELEM_REQUEST", "HEARTBEAT_TX", "TIME_SYNC")
@@ -153,7 +151,7 @@ def generate_command_sequence(
     all_tokens: list[int] = []
     token_labels: list[bool] = []
     token_injection_type: list[int] = []
-    for cmd, inj_type in zip(commands, injection_type_per_cmd):
+    for cmd, inj_type in zip(commands, injection_type_per_cmd, strict=False):
         opcode, params = cmd
         toks = tokenizer.encode_command(opcode, params)
         all_tokens.extend(toks)

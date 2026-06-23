@@ -21,14 +21,10 @@ from typing import Any
 import numpy as np
 import torch
 import torch.nn as nn
-
-from dgx_ts_core.data import TelemetryDataset, TelemetryWindow
+from dgx_ts_core.data import TelemetryDataset
 from dgx_ts_core.models import (
-    AnomalyScore,
-    Capabilities,
     FitMode,
     FitResult,
-    OutputKind,
 )
 from dgx_ts_core.registry import DETECTOR_REGISTRY
 
@@ -150,9 +146,9 @@ class ChronosDetector(ForecastingDetector):
         if T < 2:
             return torch.zeros_like(x_norm)
         encoder_inputs = token_ids[:, :-1]
-        decoder_targets = token_ids[:, 1:]
-        # Use the model's forward with labels for cross-entropy supervision when training.
-        # For score-batch we just want the predicted continuous value.
+        # `token_ids[:, 1:]` would be the decoder target if we were doing
+        # supervised cross-entropy training here — kept implicit since
+        # score-batch only needs the predicted continuous value.
         outputs = mod.backbone(
             input_ids=encoder_inputs,
             decoder_input_ids=encoder_inputs,  # parallel decoding
@@ -223,7 +219,7 @@ class ChronosDetector(ForecastingDetector):
         )
 
     @classmethod
-    def load(cls, path: Path) -> "ChronosDetector":
+    def load(cls, path: Path) -> ChronosDetector:
         data = torch.load(Path(path), map_location="cpu", weights_only=False)
         det = cls(
             model=data["model_name"],

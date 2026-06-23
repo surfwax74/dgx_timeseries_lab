@@ -1,0 +1,12 @@
+# Microsoft Phi-4 14B via vLLM.
+# "Small but smart" niche — between Llama 8B (too weak for multi-step
+# reasoning) and Llama 70B (overkill for workstation tier). Fits A5000
+# 24 GB at bf16 with ~10 GB free for KV cache. MIT licensed.
+#
+# Boot:
+#     scripts/setup_vllm_server.sh /data/llm_weights/phi-4 1 8000
+kind: vllm
+model_id: microsoft/phi-4
+base_url: http://localhost:8000/v1
+api_key: EMPTY
+timeout_s: 120.0

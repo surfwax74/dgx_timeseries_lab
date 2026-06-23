@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import numpy as np
 import pytest
-
 from dgx_ts_core.data import Channel, Subsystem, TelemetryWindow, Units
 
 

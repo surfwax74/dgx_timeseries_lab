@@ -2,13 +2,9 @@
 
 from __future__ import annotations
 
-from pathlib import Path
-
 import numpy as np
-import pytest
 import torch
-
-from dgx_ts_core.data import Channel, SplitScheme, SplitStrategy, Subsystem, TelemetryWindow, Units
+from dgx_ts_core.data import Channel, Subsystem, TelemetryWindow, Units
 from dgx_ts_core.models import AnomalyDetector, FitMode, OutputKind
 
 

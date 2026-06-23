@@ -19,7 +19,6 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-
 from dgx_ts_core.data import TelemetryDataset, TelemetryWindow
 from dgx_ts_core.models import (
     AnomalyScore,
@@ -295,7 +294,7 @@ class OperatorFingerprintDetector:
         )
 
     @classmethod
-    def load(cls, path: Path) -> "OperatorFingerprintDetector":
+    def load(cls, path: Path) -> OperatorFingerprintDetector:
         data = torch.load(Path(path), map_location="cpu", weights_only=False)
         det = cls(
             embedding_dim=data["embedding_dim"],

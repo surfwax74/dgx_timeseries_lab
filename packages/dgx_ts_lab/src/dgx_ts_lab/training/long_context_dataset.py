@@ -14,9 +14,8 @@ from __future__ import annotations
 
 import numpy as np
 import torch
-from torch.utils.data import IterableDataset, get_worker_info
-
 from dgx_ts_core.data import TelemetryDataset
+from torch.utils.data import IterableDataset, get_worker_info
 
 
 class LongContextTorchDataset(IterableDataset):

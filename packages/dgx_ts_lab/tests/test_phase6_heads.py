@@ -3,9 +3,7 @@
 from __future__ import annotations
 
 import numpy as np
-import pytest
 import torch
-
 from dgx_ts_core.models import FitMode
 
 
@@ -54,9 +52,8 @@ def _tiny_layered_dataset(n_samples: int = 2000, emit_multitask: bool = True):
 def test_multitask_label_computer_basic_shape() -> None:
     from dgx_ts_lab.datasets.synthetic.layered.labels import (
         FAULT_CLASS_INDEX,
-        MultiTaskLabelComputer,
         NO_FAULT_CEILING_SECONDS,
-        NUM_FAULT_CLASSES,
+        MultiTaskLabelComputer,
     )
 
     fault_log = [

@@ -20,7 +20,6 @@ from dataclasses import dataclass
 import numpy as np
 import torch
 import torch.nn as nn
-
 from dgx_ts_core.data import TelemetryWindow
 
 from ._pinn_base_torch import (
@@ -29,7 +28,7 @@ from ._pinn_base_torch import (
     hybrid_pinn_loss,
     sample_collocation_times,
 )
-from ._thermal_solver import ThermalBus, simulate
+from ._thermal_solver import ThermalBus
 
 
 @dataclass

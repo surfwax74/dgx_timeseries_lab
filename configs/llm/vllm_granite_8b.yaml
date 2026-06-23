@@ -1,0 +1,10 @@
+# IBM Granite 3.2 Instruct 8B via vLLM.
+# Apache 2.0 — preferred over Llama where licensing acceptable-use clauses
+# matter (DoD, intelligence, classified deployments).
+# Spin up the server with:
+#     scripts/setup_vllm_server.sh /data/llm_weights/granite-3.2-8b-instruct 1 8000
+kind: vllm
+model_id: ibm-granite/granite-3.2-8b-instruct
+base_url: http://localhost:8000/v1
+api_key: EMPTY
+timeout_s: 120.0

@@ -14,6 +14,29 @@ members = ["packages/*"]
 [tool.uv.sources]
 dgx-ts-core = { workspace = true }
 dgx-ts-lab = { workspace = true }
+# Pin torch to the CUDA 12.6 wheel on Linux (DGX / A5000 / RTX 3080 boxes
+# running Linux), CPU wheel on Windows dev boxes. This prevents `uv sync`
+# from silently picking up the +xpu (Intel GPU) or +cpu wheels which
+# disable CUDA entirely on NVIDIA hardware. If your driver doesn't
+# support CUDA 12.6 yet, change the index name + URL below to cu121.
+torch = [
+    { index = "pytorch-cu126", marker = "sys_platform == 'linux'" },
+    { index = "pytorch-cpu",   marker = "sys_platform == 'win32'" },
+]
+torchvision = [
+    { index = "pytorch-cu126", marker = "sys_platform == 'linux'" },
+    { index = "pytorch-cpu",   marker = "sys_platform == 'win32'" },
+]
+
+[[tool.uv.index]]
+name = "pytorch-cu126"
+url = "https://download.pytorch.org/whl/cu126"
+explicit = true
+
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
 
 [dependency-groups]
 dev = [
@@ -28,7 +51,22 @@ target-version = "py312"
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "B", "UP", "N", "SIM"]
-ignore = ["E501"]
+ignore = [
+    "E501",   # line-length — long math expressions are fine; black would wrap anyway
+    # pep8-naming rules disabled because ML / deep-learning code legitimately
+    # uses single-uppercase variables to match paper / tensor-dim conventions
+    # (B=batch, T=time, C=channel, D=d_model, N=n_patches, H=n_heads, etc.).
+    # Forcing them lowercase would obscure the math.
+    "N806",   # non-lowercase variable in function (B, T, D in transformer code)
+    "N803",   # invalid argument name (def f(B: int) — matches paper notation)
+    "N812",   # lowercase imported as non-lowercase (import torch.nn.functional as F)
+    "N802",   # invalid function name (factory helpers like SystemMessage() that mimic class names)
+]
+
+[tool.ruff.lint.per-file-ignores]
+# Tests + scripts may use uppercase loop / fixture vars freely
+"**/tests/**/*.py" = ["N806", "N803"]
+"scripts/*.py" = ["N806", "N803", "E402"]
 
 [tool.pytest.ini_options]
 testpaths = ["packages"]

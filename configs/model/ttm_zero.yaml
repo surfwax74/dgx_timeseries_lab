@@ -1,0 +1,8 @@
+# TTM r2 zero-shot — IBM Tiny Time Mixer, 1-5M params.
+# Apache 2.0; MLP-Mixer architecture (not transformer).
+# Designed for fast LoRA fine-tuning on commodity GPUs (RTX 3080+).
+_target_key: ttm
+
+model: ibm-granite/granite-timeseries-ttm-r2
+window_length: 512
+patch_len: 16

@@ -23,7 +23,6 @@ from .backend import (
     ToolDef,
 )
 
-
 _DEFAULT_MODEL = "claude-sonnet-4-5"
 
 
@@ -187,5 +186,4 @@ class AnthropicBackend:
         if tools:
             kwargs["tools"] = _to_anthropic_tools(tools)
         with client.messages.stream(**kwargs) as stream:
-            for text in stream.text_stream:
-                yield text
+            yield from stream.text_stream
