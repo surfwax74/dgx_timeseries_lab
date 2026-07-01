@@ -91,6 +91,37 @@ dgx-ts synth dataset=presets/leo_eps_24h
 dgx-ts synth dataset=presets/leo_eps_full_24h
 ```
 
+### The three dataset patterns — which selector to use
+
+Three parallel dataset patterns depending on what stage of iteration
+you're in:
+
+| Selector | What it does | When to use |
+|---|---|---|
+| `dataset=presets/leo_eps_24h` | **Regenerates in-memory** every call from the recipe (`_target_key: layered_synth`) | Iterating on the preset recipe itself — tweaking channels, faults, noise |
+| `dataset=cached/leo_eps_24h` | **Reads from `data/synth/leo_eps_24h/`** on disk (`_target_key: parquet_telemetry`) | Running experiments — instant load, byte-identical across runs |
+| `dataset=parquet_telemetry data_path=…` | Same as `cached/` but with a manual path | Loading a parquet directory that isn't a named preset |
+
+The smart helper handles the "materialize once, use forever" flow:
+
+```powershell
+# Windows — builds only if data/synth/<name>/ is missing
+pwsh scripts/build_dataset.ps1 leo_eps_24h
+pwsh scripts/build_dataset.ps1 leo_eps_full_24h
+pwsh scripts/build_dataset.ps1 leo_eps_24h -Force        # rebuild anyway
+```
+
+```bash
+# Linux/DGX
+bash scripts/build_dataset.sh leo_eps_24h
+bash scripts/build_dataset.sh leo_eps_full_24h --force
+```
+
+After the one-time build, every `dgx-ts train / benchmark` command that
+references `dataset=cached/<name>` reads the parquet directly. See
+[`configs/dataset/cached/README.md`](../configs/dataset/cached/README.md)
+for the pattern + staleness caveat.
+
 **Output**: `data/synth/<name>/` with `chunk_*.parquet` files (gitignored
 by `/data/` rule). The full 83-ch preset is ~200 MB on disk.
 

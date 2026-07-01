@@ -156,6 +156,17 @@ We override `trainer=cpu` and shorten `max_epochs` so it finishes in
 ~5 min on CPU. On a 3080 you can drop `trainer=cpu` and let the
 default trainer take over (~25 min, real epochs).
 
+> **Speed tip**: if you're going to run the bake-off more than once,
+> materialize the dataset to disk first so subsequent runs skip
+> regeneration:
+>
+> ```powershell
+> pwsh scripts/build_dataset.ps1 leo_eps_24h
+> ```
+>
+> Then use `dataset=cached/leo_eps_24h` in your experiment YAMLs. See
+> `configs/dataset/cached/README.md` for the full pattern.
+
 ### Step 2.2 — Inspect the layered synthetic dataset
 
 The previous bake-off used `trivial_synth` (sine + spikes). This one

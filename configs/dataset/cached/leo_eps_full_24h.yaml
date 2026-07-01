@@ -1,0 +1,12 @@
+# Cached alias — reads the pre-materialized 83-channel LEO EPS 24h
+# preset from data/synth/leo_eps_full_24h/.
+#
+# First-time setup (~15 min — this is the big preset):
+#     dgx-ts synth dataset=presets/leo_eps_full_24h
+# or:
+#     pwsh scripts/build_dataset.ps1 leo_eps_full_24h
+#
+# Cache is ~200 MB on disk. See configs/dataset/cached/README.md for the
+# full pattern.
+_target_key: parquet_telemetry
+data_path: data/synth/leo_eps_full_24h

@@ -1,0 +1,10 @@
+# Cached alias — trivial_synth generates fast enough that in-memory is
+# fine for most uses, but caching gives byte-identical bytes across
+# runs (matters for research reproducibility).
+#
+# First-time setup (~5 s):
+#     dgx-ts synth dataset=trivial_synth
+# or:
+#     pwsh scripts/build_dataset.ps1 trivial_synth
+_target_key: parquet_telemetry
+data_path: data/synth/trivial_synth
