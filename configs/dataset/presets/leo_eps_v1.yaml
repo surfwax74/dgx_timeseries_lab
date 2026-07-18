@@ -1,0 +1,47 @@
+# LEO EPS mission variant V1 — QUIET MISSION
+#
+# Same channel structure as leo_eps_24h but with LOW fault rates and
+# subdued noise. Represents a well-behaved reference orbit — the AD
+# model's "should be almost silent" baseline.
+#
+# Delta from base leo_eps_24h:
+#   - seed=1001 (deterministic but different from base seed=42)
+#   - all fault rates × 0.3
+#   - all noise stds × 0.5
+#   - no LinearDrift, no ExponentialAging (a fresh-off-the-launch spacecraft)
+
+_target_key: layered_synth
+n_samples: 86400
+sample_rate_hz: 1.0
+seed: 1001
+name: leo_eps_v1
+subsystem: eps
+
+channels:
+  - {name: bus_voltage,   units: V,    subsystem: eps,     sample_rate_hz: 1.0}
+  - {name: bus_current,   units: A,    subsystem: eps,     sample_rate_hz: 1.0}
+  - {name: battery_soc,   units: pct,  subsystem: eps,     sample_rate_hz: 1.0}
+  - {name: panel_temp_x,  units: degC, subsystem: tcs,     sample_rate_hz: 1.0}
+  - {name: panel_temp_y,  units: degC, subsystem: tcs,     sample_rate_hz: 1.0}
+  - {name: payload_power, units: W,    subsystem: payload, sample_rate_hz: 1.0}
+
+components:
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.modes.ModeMachine, period_s: 5400.0, eclipse_fraction: 0.35, payload_active_rate_per_hour: 0.5, payload_duration_s: 800.0}
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.physics.OrbitalSinusoid, channel: bus_voltage, amplitude: 0.3, period_s: 5400.0, baseline: 28.0}
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.physics.BatterySoC, channel: battery_soc, capacity_Ah: 30.0, charge_rate_A: 2.5, discharge_rate_A: 4.0, initial_soc: 0.85}
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.physics.ThermalDutyCycle, channel: panel_temp_x, equilibrium_sun_C: 55.0, equilibrium_shade_C: -40.0, time_constant_s: 600.0, initial_C: 20.0}
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.physics.ThermalDutyCycle, channel: panel_temp_y, equilibrium_sun_C: 50.0, equilibrium_shade_C: -42.0, time_constant_s: 650.0, initial_C: 18.0}
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.physics.OrbitalSinusoid, channel: payload_power, amplitude: 0.0, period_s: 5400.0, baseline: 5.0}
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.coupling.LinearCoupling, source: payload_power, target: bus_current, gain: 0.04, offset: 1.2}
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.coupling.InverseCoupling, source: bus_current, target: bus_voltage, gain: 0.05}
+
+  # Subdued noise (×0.5)
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.noise.GaussianNoise, channel: bus_voltage, std: 0.01}
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.noise.GaussianNoise, channel: bus_current, std: 0.01}
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.noise.PinkNoise, channel: panel_temp_x, std: 0.15}
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.noise.PinkNoise, channel: panel_temp_y, std: 0.15}
+
+  # Low fault rates (×0.3 vs base)
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.faults.PointFault, channel: bus_voltage, rate_per_hour: 0.3, magnitude: 0.3}
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.faults.DropoutFault, channel: bus_current, rate_per_hour: 0.15, min_duration_s: 2.0, max_duration_s: 5.0}
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.faults.StuckAtFault, channel: panel_temp_x, rate_per_day: 0.5, min_duration_s: 60.0, max_duration_s: 180.0}

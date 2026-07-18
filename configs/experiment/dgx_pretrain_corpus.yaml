@@ -1,0 +1,40 @@
+# @package _global_
+#
+# DGX pretraining experiment — Sat-TSFM against the 6-mission LEO EPS
+# corpus. This is the flagship "big training run" for the DGX story.
+#
+# What it does:
+#   * Trains sat_tsfm_medium from scratch on the union of 6 EPS missions
+#     (~518k timesteps at 1 Hz = ~6 days of continuous telemetry).
+#   * Runs on 8×H200 with FSDP by default (override for smaller boxes).
+#   * Windows: 512 timesteps at stride 64 → ~8k training windows per epoch.
+#
+# Prerequisites:
+#   * All 6 cached members must be materialized:
+#         pwsh scripts/build_corpus.ps1
+#   * (Optional) H200 environment. For a dry-run on a workstation, override
+#     trainer=rtx_3080_single and model=sat_tsfm_small.
+#
+# Usage:
+#     dgx-ts train experiment=dgx_pretrain_corpus
+#
+# Downgraded workstation run:
+#     dgx-ts train experiment=dgx_pretrain_corpus \
+#            trainer=rtx_3080_single trainer.max_epochs=1
+defaults:
+  - override /dataset: cached/leo_eps_corpus
+  - override /model: sat_tsfm_medium
+  - override /trainer: h200_fsdp_8x
+
+mode: pretrain
+
+trainer:
+  max_epochs: 64
+  batch_size: 32
+  window_length: 512
+  window_stride: 64
+  learning_rate: 1e-4
+
+mlflow:
+  experiment_name: dgx_pretrain_corpus
+  run_name: sat_tsfm_medium_h200_fsdp_leo_eps_corpus

@@ -8,6 +8,17 @@ Canonical pre-built dataset configurations. Use these as starting points or for 
 |---|---|---:|---|
 | `leo_eps_24h.yaml` | EPS (minimal) | 6 | Phase 1 smoke test. Fast to generate; ideal for debugging. |
 | `leo_eps_full_24h.yaml` | EPS (comprehensive, redundant) | **83** | Realistic benchmark target. Full Side-A/Side-B redundancy: 2 solar arrays, 2 batteries, 2 PDUs, 2 PCUs, 5 major loads. Use for the actual bake-off. |
+| `leo_eps_v1.yaml` | EPS (variant) | 6 | **Quiet mission** — low fault rates × 0.3, subdued noise × 0.5, no drift/aging. Baseline for the pretraining corpus. |
+| `leo_eps_v2.yaml` | EPS (variant) | 6 | **Stormy mission** — high noise (Gaussian + Pink + StudentT + PoissonBurst × 2), fault rates × 2. |
+| `leo_eps_v3.yaml` | EPS (variant) | 6 | **Sun-synchronous orbit** — period 6000 s (was 5400), longer eclipses (42% vs 35%), matched thermal time constants. |
+| `leo_eps_v4.yaml` | EPS (variant) | 6 | **Aging spacecraft** — LinearDrift + ExponentialAging + DriftFault rate × 3. End-of-life regime. |
+| `leo_eps_v5.yaml` | EPS (variant) | 6 | **Payload-heavy mission** — SAR/imaging profile with 3× payload duty cycle, tight bus coupling, frequent oscillation faults. |
+
+**Variants v1–v5** share the exact 6-channel schema of `leo_eps_24h`
+(same channels in the same order) so they compose cleanly into
+`cached/leo_eps_corpus.yaml` — the DGX pretraining corpus. See
+[`../../../docs/pretraining_corpus_roadmap.md`](../../../docs/pretraining_corpus_roadmap.md)
+for the roadmap that scales this to 30+ missions.
 
 ## leo_eps_full_24h.yaml — channel layout
 

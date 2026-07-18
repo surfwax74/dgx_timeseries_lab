@@ -1,0 +1,45 @@
+# LEO EPS mission variant V3 — SUN-SYNCHRONOUS ORBIT
+#
+# Longer orbital period (100 min vs. 90 min baseline) with more time in
+# eclipse. Represents a sun-synchronous polar-orbiter (like SMAP itself,
+# Sentinel-2, etc.). Different orbital cadence gives the model exposure
+# to a different fundamental frequency.
+#
+# Delta from base:
+#   - seed=1003
+#   - period_s: 6000 (was 5400)
+#   - eclipse_fraction: 0.42 (was 0.35 — longer eclipses)
+#   - thermal time_constants scaled to match
+
+_target_key: layered_synth
+n_samples: 86400
+sample_rate_hz: 1.0
+seed: 1003
+name: leo_eps_v3
+subsystem: eps
+
+channels:
+  - {name: bus_voltage,   units: V,    subsystem: eps,     sample_rate_hz: 1.0}
+  - {name: bus_current,   units: A,    subsystem: eps,     sample_rate_hz: 1.0}
+  - {name: battery_soc,   units: pct,  subsystem: eps,     sample_rate_hz: 1.0}
+  - {name: panel_temp_x,  units: degC, subsystem: tcs,     sample_rate_hz: 1.0}
+  - {name: panel_temp_y,  units: degC, subsystem: tcs,     sample_rate_hz: 1.0}
+  - {name: payload_power, units: W,    subsystem: payload, sample_rate_hz: 1.0}
+
+components:
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.modes.ModeMachine, period_s: 6000.0, eclipse_fraction: 0.42, payload_active_rate_per_hour: 0.9, payload_duration_s: 600.0}
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.physics.OrbitalSinusoid, channel: bus_voltage, amplitude: 0.35, period_s: 6000.0, baseline: 28.0}
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.physics.BatterySoC, channel: battery_soc, capacity_Ah: 30.0, charge_rate_A: 2.5, discharge_rate_A: 4.0, initial_soc: 0.72}
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.physics.ThermalDutyCycle, channel: panel_temp_x, equilibrium_sun_C: 58.0, equilibrium_shade_C: -50.0, time_constant_s: 720.0, initial_C: 15.0}
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.physics.ThermalDutyCycle, channel: panel_temp_y, equilibrium_sun_C: 53.0, equilibrium_shade_C: -52.0, time_constant_s: 780.0, initial_C: 13.0}
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.physics.OrbitalSinusoid, channel: payload_power, amplitude: 0.0, period_s: 6000.0, baseline: 5.0}
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.coupling.LinearCoupling, source: payload_power, target: bus_current, gain: 0.04, offset: 1.2}
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.coupling.InverseCoupling, source: bus_current, target: bus_voltage, gain: 0.05}
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.noise.GaussianNoise, channel: bus_voltage, std: 0.02}
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.noise.StudentTNoise, channel: bus_current, scale: 0.02, df: 4.0}
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.noise.PinkNoise, channel: panel_temp_x, std: 0.3}
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.noise.PinkNoise, channel: panel_temp_y, std: 0.3}
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.faults.PointFault, channel: bus_voltage, rate_per_hour: 1.0, magnitude: 0.5}
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.faults.DropoutFault, channel: bus_current, rate_per_hour: 0.5, min_duration_s: 2.0, max_duration_s: 8.0}
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.faults.StuckAtFault, channel: panel_temp_x, rate_per_day: 1.5, min_duration_s: 60.0, max_duration_s: 300.0}
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.faults.DriftFault, channel: panel_temp_y, rate_per_day: 1.0, ramp_duration_s: 600.0, final_offset: 4.0}

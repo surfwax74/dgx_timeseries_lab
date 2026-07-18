@@ -1,0 +1,12 @@
+# Cached alias — ESA OPS-SAT anomaly-detection dataset.
+#
+# Real spacecraft telemetry from ESA's OPS-SAT flying testbed.
+# Provisioning (one-time, connected machine → sneakernet → DGX):
+#     python scripts/download_ops_sat.py
+#     python scripts/convert_ops_sat_to_parquet.py --raw data/ops_sat_raw --output data/ops_sat
+# Then use anywhere via: dataset=cached/ops_sat
+#
+# See docs/ops_sat_provisioning.md for the full walkthrough + URL
+# verification checklist (dataset host can rotate — verify before download).
+_target_key: parquet_telemetry
+data_path: data/ops_sat

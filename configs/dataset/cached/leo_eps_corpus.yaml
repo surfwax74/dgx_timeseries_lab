@@ -1,0 +1,39 @@
+# LEO EPS pretraining corpus — union of all 7 EPS mission variants.
+#
+# This is the "big dataset" for Sat-TSFM pretraining. It reads seven
+# pre-materialized parquet directories and presents them as a single
+# virtual TelemetryDataset. All members share the same 6-channel EPS
+# schema (bus_voltage, bus_current, battery_soc, panel_temp_x,
+# panel_temp_y, payload_power).
+#
+# Members (~6 × 24h = ~7 days of continuous LEO EPS data):
+#   leo_eps_24h        — base preset (seed=42)
+#   leo_eps_full_24h   — high-channel-count variant (used for width)
+#   leo_eps_v1         — quiet mission
+#   leo_eps_v2         — stormy mission
+#   leo_eps_v3         — sun-synchronous orbit
+#   leo_eps_v4         — aging spacecraft
+#   leo_eps_v5         — payload-heavy mission
+#
+# Note: leo_eps_full_24h has 83 channels vs. 6 for the others — it will
+# ONLY work in the corpus if you re-generate it with the 6-channel schema.
+# For now we exclude it below; add it back after the schema-matching pass.
+#
+# Materialize all members first:
+#     pwsh scripts/build_corpus.ps1                 # Windows
+#     bash scripts/build_corpus.sh                  # Linux/DGX
+#
+# Then train against the union:
+#     dgx-ts train dataset=cached/leo_eps_corpus model=sat_tsfm_medium \
+#            trainer=h200_fsdp_8x experiment=dgx_pretrain_corpus
+
+_target_key: parquet_telemetry_corpus
+name: leo_eps_corpus
+subsystem: eps
+data_paths:
+  - data/synth/leo_eps_24h
+  - data/synth/leo_eps_v1
+  - data/synth/leo_eps_v2
+  - data/synth/leo_eps_v3
+  - data/synth/leo_eps_v4
+  - data/synth/leo_eps_v5

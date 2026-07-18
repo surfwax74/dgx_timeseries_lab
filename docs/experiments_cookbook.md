@@ -122,6 +122,42 @@ references `dataset=cached/<name>` reads the parquet directly. See
 [`configs/dataset/cached/README.md`](../configs/dataset/cached/README.md)
 for the pattern + staleness caveat.
 
+### Batch-materializing a corpus (Phase A pretraining data)
+
+The 6 EPS mission variants that ship as the DGX pretraining corpus can
+be built in one shot:
+
+```powershell
+# Windows — builds all 7 members (base + 5 variants + full 83-ch).
+pwsh scripts/build_corpus.ps1                                # ~27 min from scratch
+pwsh scripts/build_corpus.ps1 -DryRun                        # list only
+pwsh scripts/build_corpus.ps1 -Only leo_eps_v1,leo_eps_v3    # subset
+pwsh scripts/build_corpus.ps1 -Force                         # rebuild all
+```
+
+```bash
+# Linux/DGX
+bash scripts/build_corpus.sh
+bash scripts/build_corpus.sh --dry-run
+bash scripts/build_corpus.sh --only leo_eps_v1,leo_eps_v3
+```
+
+After the corpus is materialized, train Sat-TSFM on the union with:
+
+```bash
+# H200 FSDP full run
+dgx-ts train experiment=dgx_pretrain_corpus
+
+# Downgraded workstation dry-run
+dgx-ts train experiment=dgx_pretrain_corpus \
+       trainer=rtx_3080_single trainer.max_epochs=1
+```
+
+The corpus lives at [`configs/dataset/cached/leo_eps_corpus.yaml`](../configs/dataset/cached/leo_eps_corpus.yaml)
+and is a `parquet_telemetry_corpus` union of 6 members with a shared
+6-channel EPS schema. Roadmap for scaling to 30+ missions lives at
+[`docs/pretraining_corpus_roadmap.md`](pretraining_corpus_roadmap.md).
+
 **Output**: `data/synth/<name>/` with `chunk_*.parquet` files (gitignored
 by `/data/` rule). The full 83-ch preset is ~200 MB on disk.
 

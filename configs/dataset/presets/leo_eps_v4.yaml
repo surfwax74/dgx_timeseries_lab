@@ -1,0 +1,50 @@
+# LEO EPS mission variant V4 — AGING SPACECRAFT (end of life)
+#
+# Everything drifts. Battery capacity is 60% of nominal, panels have
+# degraded output, and the bus voltage sags under load. Represents a
+# spacecraft that's been operational for 5+ years — a common late-life
+# regime where AD becomes especially valuable.
+#
+# Delta from base:
+#   - seed=1004
+#   - initial_soc: 0.55 (degraded battery)
+#   - stronger LinearDrift + ExponentialAging
+#   - DriftFault rate ×3 (aging manifests as more frequent drift events)
+
+_target_key: layered_synth
+n_samples: 86400
+sample_rate_hz: 1.0
+seed: 1004
+name: leo_eps_v4
+subsystem: eps
+
+channels:
+  - {name: bus_voltage,   units: V,    subsystem: eps,     sample_rate_hz: 1.0}
+  - {name: bus_current,   units: A,    subsystem: eps,     sample_rate_hz: 1.0}
+  - {name: battery_soc,   units: pct,  subsystem: eps,     sample_rate_hz: 1.0}
+  - {name: panel_temp_x,  units: degC, subsystem: tcs,     sample_rate_hz: 1.0}
+  - {name: panel_temp_y,  units: degC, subsystem: tcs,     sample_rate_hz: 1.0}
+  - {name: payload_power, units: W,    subsystem: payload, sample_rate_hz: 1.0}
+
+components:
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.modes.ModeMachine, period_s: 5400.0, eclipse_fraction: 0.35, payload_active_rate_per_hour: 0.6, payload_duration_s: 700.0}
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.physics.OrbitalSinusoid, channel: bus_voltage, amplitude: 0.25, period_s: 5400.0, baseline: 27.0}
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.physics.BatterySoC, channel: battery_soc, capacity_Ah: 18.0, charge_rate_A: 2.0, discharge_rate_A: 4.5, initial_soc: 0.55}
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.physics.ThermalDutyCycle, channel: panel_temp_x, equilibrium_sun_C: 60.0, equilibrium_shade_C: -35.0, time_constant_s: 550.0, initial_C: 22.0}
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.physics.ThermalDutyCycle, channel: panel_temp_y, equilibrium_sun_C: 55.0, equilibrium_shade_C: -37.0, time_constant_s: 600.0, initial_C: 20.0}
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.physics.OrbitalSinusoid, channel: payload_power, amplitude: 0.0, period_s: 5400.0, baseline: 4.5}
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.coupling.LinearCoupling, source: payload_power, target: bus_current, gain: 0.05, offset: 1.4}
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.coupling.InverseCoupling, source: bus_current, target: bus_voltage, gain: 0.08}
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.noise.GaussianNoise, channel: bus_voltage, std: 0.03}
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.noise.PinkNoise, channel: panel_temp_x, std: 0.4}
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.noise.PinkNoise, channel: panel_temp_y, std: 0.4}
+
+  # Aggressive drift + aging (the point of this variant)
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.drift.LinearDrift, channel: bus_voltage, drift_per_day: -0.02}
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.drift.ExponentialAging, channel: battery_soc, final_fraction: 0.85, time_constant_days: 3.0}
+
+  # Frequent drift faults — this is what late-life looks like
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.faults.DriftFault, channel: bus_voltage, rate_per_day: 3.0, ramp_duration_s: 1200.0, final_offset: 0.6}
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.faults.DriftFault, channel: panel_temp_x, rate_per_day: 3.0, ramp_duration_s: 900.0, final_offset: 3.0}
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.faults.PointFault, channel: bus_voltage, rate_per_hour: 1.5, magnitude: 0.6}
+  - {_target_: dgx_ts_lab.datasets.synthetic.layered.faults.StuckAtFault, channel: panel_temp_y, rate_per_day: 2.0, min_duration_s: 120.0, max_duration_s: 600.0}

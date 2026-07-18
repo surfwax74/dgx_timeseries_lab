@@ -1,0 +1,8 @@
+# Cached alias — LEO EPS mission variant V4 (aging spacecraft).
+#
+# Materialize once:
+#     pwsh scripts/build_dataset.ps1 leo_eps_v4
+# Then reuse:
+#     dgx-ts train dataset=cached/leo_eps_v4 model=patchtst_mae
+_target_key: parquet_telemetry
+data_path: data/synth/leo_eps_v4
