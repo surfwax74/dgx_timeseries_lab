@@ -1,13 +1,39 @@
 # Forecasting + RUL Bake-off — scoping doc
 
-**Status:** scoped, not started. Five-task work package, ~1 week of
-engineering. See task list `#92`–`#96`.
+**Status:** W1 in progress (scoping locked, metrics modules building).
+Five-task work package, ~1 week of engineering. See task list `#92`–`#96`.
 
 A second bake-off, **separate from the AD bake-off**, that benchmarks
 forecasters and RUL estimators on satellite telemetry. This is where
 Prophet, ETS, and the prognostics use cases belong — and where our
 existing Sat-TSFM multi-task `RULRegressorHead` finally gets a leaderboard
 slot.
+
+## Data strategy: real vs synthetic (the hard split)
+
+**Forecasting** and **RUL** have fundamentally different data requirements,
+which drives our real-vs-synthetic split:
+
+| Task | Real data OK? | Why |
+|---|---|---|
+| Forecasting | ✅ YES | Needs continuous long-runway signal. OPS-SAT (~4 months) and NASA Telemanom (~weeks/channel) both work. |
+| RUL         | ❌ NO   | Needs run-to-failure trajectories with EOL labels. Neither NASA nor OPS-SAT provide these — spacecraft are still flying. |
+
+**Real datasets in the forecasting side** (multi-step-ahead evaluation):
+- **OPS-SAT-AD** (~4 months, ~150 channels @ 1 Hz) — ample runway for
+  h=64 through h=1024 evaluations, mission-realistic seasonality.
+- **NASA SMAP/MSL** (~weeks per channel) — enough for h=64 through h=256;
+  serves as the "small but real" baseline against OPS-SAT.
+
+**Synthetic-only for RUL** (because you need EOL labels the real
+missions can't give you):
+- Scenario A — `battery_soc_degradation` (6 months synth, EOL = SoC <30%)
+- Scenario B — `fuel_mass_projection` (2 years synth, EOL = fuel <reserve)
+
+If NASA C-MAPSS or similar public RUL-labeled data is later added,
+it slots in beside these two scenarios. Do NOT retrofit RUL onto
+NASA-Telemanom or OPS-SAT — the labels aren't there and any RUL
+number produced would be meaningless.
 
 ---
 

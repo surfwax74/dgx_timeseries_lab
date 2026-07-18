@@ -1,0 +1,20 @@
+# TopK SAE — small profile
+#
+# Fits comfortably on CPU / a single 3080. Use for iterating on the
+# training recipe against a small captured-activation set (~50k rows).
+
+_target_: dgx_ts_lab.explanation.sae.TopKSAE
+d_input: 256          # Sat-TSFM small d_model
+d_dict: 2048          # 8x over-complete
+k: 32                 # ~sqrt(d_dict) = 45; 32 is on the sparser side
+untie_weights: false
+subtract_decoder_bias_before_encode: true
+
+training:
+  n_epochs: 20
+  batch_size: 256
+  learning_rate: 3.0e-4
+  aux_loss_weight: 0.03125     # 1/32 per Gao et al.
+  dead_atom_reset_interval_epochs: 5
+  normalize_decoder_after_step: true
+  log_every_epochs: 1

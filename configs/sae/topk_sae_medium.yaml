@@ -1,0 +1,21 @@
+# TopK SAE — medium profile
+#
+# Sized for Sat-TSFM medium (d_model=512) on A5000 / H200.
+# ~24M params in the dictionary; ~40 minutes for a full 20-epoch run
+# on ~500k activations on a single H200.
+
+_target_: dgx_ts_lab.explanation.sae.TopKSAE
+d_input: 512          # Sat-TSFM medium d_model
+d_dict: 8192          # 16x over-complete
+k: 64                 # ~sqrt(d_dict) = 90; 64 is deliberately sparse
+untie_weights: false
+subtract_decoder_bias_before_encode: true
+
+training:
+  n_epochs: 40
+  batch_size: 1024
+  learning_rate: 3.0e-4
+  aux_loss_weight: 0.03125
+  dead_atom_reset_interval_epochs: 5
+  normalize_decoder_after_step: true
+  log_every_epochs: 1

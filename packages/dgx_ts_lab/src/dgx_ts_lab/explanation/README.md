@@ -12,6 +12,7 @@ Phase 7 — detector-agnostic explanation layer. When AD fires, this package tur
 | `cascade_walker.py` | `walk_cascade()` — BFS up to N hops along the coupling graph; ranks upstream causes by decayed edge weight. |
 | `visualize.py` | matplotlib PNG renderers: per-step score timeline + top-K channel attribution bar chart. |
 | `report_writer.py` | `write_report()` — emits `explanation_<idx>.md` (human) + `explanation_<idx>.json` (machine-consumable). |
+| `sae/` | Sparse Autoencoder sprint (interpretability of Sat-TSFM encoder activations). See [`sae/README.md`](sae/README.md). Wave 1 (this repo): `TopKSAE` model + `train_sae()` fit loop. Wave 2: activation capture + feature interpretation. |
 
 ## CLI
 
