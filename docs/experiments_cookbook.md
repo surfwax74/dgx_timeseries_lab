@@ -39,6 +39,11 @@ on Windows when not using the `dgx-ts` entry point.
 | Side-by-side detector bake-off + figures | `pwsh scripts/quickstart.ps1` or `bash scripts/quickstart.sh` | CPU | ~1 min |
 | RTX 3080 production bake-off | `dgx-ts benchmark experiment=rtx3080_bakeoff` | RTX 3080 | ~25 min |
 | Foundation models (Chronos / Moirai) | `dgx-ts benchmark experiment=phase3_bakeoff` | A5000 / H200 | ~15 min |
+| TSFM smoke (TimesFM / TTM / TimeMoE) | `dgx-ts benchmark experiment=tsfm_smoke` | CPU | ~2 min |
+| Load NASA Telemanom channel | `dataset=nasa_smap_channel +dataset.channel=A-1` | CPU | live |
+| Load OPS-SAT real ESA data | `dataset=cached/ops_sat` | any | live |
+| Materialize 6-mission EPS corpus | `pwsh scripts/build_corpus.ps1` | CPU | ~27 min |
+| DGX corpus pretraining | `dgx-ts train experiment=dgx_pretrain_corpus` | 8x H200 | ~6 h |
 | FSDP scale demo | `dgx-ts train experiment=phase4_scale` | 8x H200 | ~6 h |
 | Multi-task foundation training | `dgx-ts train experiment=phase6_multitask` | A5000 / H200 | ~45 min |
 | Explanation report from a run | `dgx-ts explain --run <mlflow-id>` | CPU | ~10 s |
@@ -46,6 +51,8 @@ on Windows when not using the `dgx-ts` entry point.
 | Thermal + ADCS PINN bake-off | `dgx-ts benchmark experiment=phase9_pinn_bakeoff` | A5000 | ~30 min |
 | Cross-modal foundation pretrain | `dgx-ts train experiment=phase10_multimodal` | CPU smoke / DGX prod | 30 s / ~3 h |
 | Interactive LLM co-pilot REPL | `dgx-ts copilot --backend mock` | any | live |
+| Train a Sparse Autoencoder | `python -m dgx_ts_lab.explanation.sae ...` (library) | CPU / GPU | ~1-40 min |
+| Score forecasts (metrics library) | `from dgx_ts_lab.evaluation import forecasting_metrics` | CPU | µs |
 | **Full DGX procurement showcase** | `bash scripts/dgx_showcase.sh` | **8x H200** | ~6-8 h |
 | Render plots from any benchmark dir | `dgx-ts viz --benchmark-dir benchmark_reports/<name>` | CPU | ~5 s |
 | Generate procurement-deck figures | `python scripts/build_capability_cliff.py` | CPU | ~3 s |
@@ -166,6 +173,87 @@ by `/data/` rule). The full 83-ch preset is ~200 MB on disk.
 - Components: `packages/dgx_ts_lab/src/dgx_ts_lab/datasets/synthetic/layered/`
 - NASA loader: `datasets/nasa_telemanom.py`
 - Parquet loader: `datasets/parquet_telemetry.py`
+- Corpus loader: `datasets/parquet_corpus.py` (`parquet_telemetry_corpus` registry key)
+
+### The 6 EPS mission-variant presets
+
+The `leo_eps_v1..v5` presets (plus the base `leo_eps_24h`) all share a
+6-channel schema so they compose into `cached/leo_eps_corpus.yaml`.
+
+| Preset | Regime | Seed |
+|---|---|---|
+| `presets/leo_eps_24h` | Base reference | 42 |
+| `presets/leo_eps_v1` | Quiet mission (low fault, subdued noise) | 1001 |
+| `presets/leo_eps_v2` | Stormy mission (high noise, high fault rate) | 1002 |
+| `presets/leo_eps_v3` | Sun-synchronous orbit (6000 s period) | 1003 |
+| `presets/leo_eps_v4` | Aging spacecraft (drift + exponential aging) | 1004 |
+| `presets/leo_eps_v5` | Payload-heavy (imaging/SAR duty cycle) | 1005 |
+
+Each is 24 h at 1 Hz, ~10 MB on disk after `dgx-ts synth`. Full roadmap
+scaling to 30+ missions: [`docs/pretraining_corpus_roadmap.md`](pretraining_corpus_roadmap.md).
+
+---
+
+## Real satellite data (NASA Telemanom + OPS-SAT)
+
+**Proves**: the same trainer / benchmark path that runs on synthetic
+data also runs on real spacecraft telemetry. Two public datasets are
+wired.
+
+### NASA SMAP / MSL (Telemanom)
+
+Small (~weeks per channel) but easy to fetch. Ships with the loader.
+
+```bash
+# Download once (data lands in data/nasa_telemanom/{SMAP,MSL})
+bash scripts/download_nasa_telemanom.sh
+
+# Train against a specific SMAP channel
+dgx-ts train dataset=nasa_smap_channel +dataset.channel=A-1 \
+    model=rolling_mean trainer=cpu
+
+# Or an MSL channel
+dgx-ts train dataset=nasa_msl_channel +dataset.channel=T-4 \
+    model=patchtst_mae trainer=rtx3080
+```
+
+Channels are per-file — the loader emits a single channel at a time.
+
+### OPS-SAT (real ESA data — ~4 months of housekeeping telemetry)
+
+Multi-month runway across ~150 channels. Requires a one-time
+connected-machine download, then sneakernet-transferable.
+
+```powershell
+# Step 1 — download on a connected machine (~2 GB zip)
+python scripts\download_ops_sat.py
+
+# Step 2 — convert to our parquet layout
+python scripts\convert_ops_sat_to_parquet.py `
+    --raw data\ops_sat_raw --output data\ops_sat
+
+# Step 3 — verify
+.\.venv\Scripts\python.exe -m dgx_ts_lab.cli.main train `
+    dataset=cached/ops_sat model=patchtst_mae `
+    trainer=cpu trainer.max_epochs=1
+```
+
+Full walkthrough incl. sneakernet + URL-rotation troubleshooting:
+[`docs/ops_sat_provisioning.md`](ops_sat_provisioning.md).
+
+**When to use each**:
+
+| Dataset | Runway | Use case |
+|---|---|---|
+| `trivial_synth` | infinite | Smoke test |
+| `presets/leo_eps_*` | 24 h × 6 variants | Iterate on recipes |
+| `cached/leo_eps_corpus` | ~7 days | DGX pretraining |
+| `nasa_smap_channel` / `nasa_msl_channel` | weeks | Real-data forecasting baseline |
+| `cached/ops_sat` | ~4 months | Real-data forecasting up to h=1024 |
+
+**Do NOT** compute RUL on NASA or OPS-SAT — neither dataset contains
+run-to-failure trajectories. RUL evaluation goes against synthetic
+long-runway scenarios only; see the forecasting+RUL section below.
 
 ---
 
@@ -206,16 +294,29 @@ bash scripts/quickstart.sh             # Linux/DGX
 
 ---
 
-## Phase 3 — Foundation models (Chronos / MOMENT / Moirai)
+## Phase 3 — Foundation models (Chronos / MOMENT / Moirai + TimesFM / TTM / TimeMoE)
 
 **Proves**: HuggingFace-hosted foundation models plug into the same
-trainer via zero-shot + LoRA fine-tuning paths.
+trainer via zero-shot + LoRA fine-tuning paths. Six adapters ship:
+
+| Adapter | Backing | Family | Registry key |
+|---|---|---|---|
+| Chronos | Amazon | T5 encoder-decoder | `chronos` |
+| MOMENT | CMU AutonLab | Reconstruction transformer | `moment` |
+| Moirai | Salesforce | Encoder-only forecaster | `moirai` |
+| TimesFM | Google | Decoder-only patched transformer (500M) | `timesfm` |
+| TTM | IBM | MLP-Mixer (not transformer, 1-5M) | `ttm` |
+| TimeMoE | Maple728/Tsinghua | MoE decoder-only (200M) | `time_moe` |
 
 ### Run it
 
 ```bash
-# Bake-off across zero-shot and LoRA-finetuned foundation models
+# Original 3-model bake-off across zero-shot and LoRA-finetuned paths
 dgx-ts benchmark experiment=phase3_bakeoff trainer=a5000
+
+# Smoke bake-off of the three NEW adapters vs. rolling_mean baseline
+# (uses untrained-fallback path — no HF weights needed, ~2 min on CPU)
+dgx-ts benchmark experiment=tsfm_smoke
 
 # Just Chronos zero-shot (no training, fast)
 dgx-ts train experiment=phase3_bakeoff +mode=zeroshot \
@@ -225,12 +326,16 @@ dgx-ts train experiment=phase3_bakeoff +mode=zeroshot \
 **Output**: same shape as Phase 2 — leaderboard + figures.
 
 **Prerequisite**: Foundation model weights either via HF Hub (`huggingface-cli login`)
-OR via sneakernet bundle — see `docs/foundation_model_provisioning.md`. The
-detectors fall back to an untrained T5 if weights are missing so tests still pass.
+OR via sneakernet bundle — see `docs/foundation_model_provisioning.md`. Every
+adapter falls back to a tiny untrained module if weights are missing, so
+tests + smoke bake-offs still run on any box.
+
+**Full model list + versions + companies**: [`docs/foundation_model_roadmap.md`](foundation_model_roadmap.md).
 
 **Files**:
-- Configs: `configs/model/{chronos_zero,chronos_lora,moirai_zero,moirai_lora,moment_zero,moment_lora}.yaml`
-- Adapters: `models/foundation/{chronos,moirai,moment}.py`
+- Configs: `configs/model/{chronos_zero,chronos_lora,moirai_zero,moirai_lora,moment_zero,moment_lora,timesfm_zero,timesfm_lora,ttm_lora,time_moe_lora}.yaml`
+- Adapters: `models/foundation/{chronos,moirai,moment,timesfm,ttm,time_moe}.py`
+- Smoke config: `configs/experiment/tsfm_smoke.yaml`
 
 ---
 
@@ -366,6 +471,50 @@ structured Markdown with:
 **Files**:
 - Code: `explanation/{attribution,cascade_walker,report_writer,visualize}.py`
 - CLI: `cli/explain.py`
+
+### Sparse Autoencoders (interpretability sprint — Wave 1 shipped)
+
+**Proves**: a wide TopK Sparse Autoencoder trained on frozen Sat-TSFM
+encoder activations learns interpretable dictionary features, giving
+operators a named vocabulary for "what the model is thinking about."
+
+Currently a library only — no CLI yet. Activation capture is Wave 2.
+
+```python
+import numpy as np
+from dgx_ts_lab.explanation.sae import TopKSAE, train_sae
+from dgx_ts_lab.explanation.sae.train import SAETrainingConfig
+
+# Pretend `acts` is (N, 256) captured from a frozen Sat-TSFM small.
+acts = np.random.randn(10_000, 256).astype("float32")
+
+sae = TopKSAE(d_input=256, d_dict=2048, k=32)   # 8x over-complete dict
+history = train_sae(
+    sae, activations=acts,
+    config=SAETrainingConfig(n_epochs=20, batch_size=256),
+    device="cpu",
+)
+print("final recon loss:", history.recon_loss[-1])
+print("dead atom fraction:", history.dead_atom_fraction[-1])
+```
+
+**Sizing profiles**:
+
+| Config | d_input | d_dict | k | Tier |
+|---|---:|---:|---:|---|
+| `configs/sae/topk_sae_small.yaml`  | 256 | 2048 (8x)  | 32 | CPU / RTX 3080 |
+| `configs/sae/topk_sae_medium.yaml` | 512 | 8192 (16x) | 64 | A5000 / H200 |
+
+**What's coming (Wave 2)**: activation-capture hooks that freeze a
+Sat-TSFM checkpoint, stream data through, and dump `(N, d_model)`
+activations to parquet. Then feature interpretation (top-K activating
+windows per atom).
+
+**Files**:
+- Model: `explanation/sae/sae.py` (`TopKSAE`)
+- Training: `explanation/sae/train.py` (`train_sae`, `SAETrainingConfig`, `SAETrainingHistory`)
+- Configs: `configs/sae/topk_sae_{small,medium}.yaml`
+- Design + refs: `packages/dgx_ts_lab/src/dgx_ts_lab/explanation/sae/README.md`
 
 ---
 
@@ -524,6 +673,77 @@ dgx-ts viz --benchmark-dir benchmark_reports/<name> --splits val
 
 ---
 
+## Forecasting + RUL bake-off (in progress — W1 shipped)
+
+**Proves**: separate leaderboard for forecasting (multi-step-ahead)
+and RUL (remaining useful life) tasks. This is where Prophet, ETS, and
+the `RULRegressorHead` finally get numbers.
+
+**Current status**:
+
+| Wave | Deliverable | Status |
+|---|---|---|
+| W1 | Scoping doc + metrics modules | **Shipped** |
+| W2 | Forecasting dataset wrapper + battery/fuel scenarios | Pending |
+| W3 | Prophet + ETS adapters | Pending |
+| W4 | `dgx-ts forecast-bench` CLI + viz | Pending |
+| W5 | Tests + cookbook wrap-up | Pending |
+
+### What you can use TODAY (W1)
+
+Import the metrics modules and score any array of forecasts / RUL
+predictions:
+
+```python
+import numpy as np
+from dgx_ts_lab.evaluation import forecasting_metrics as fm
+from dgx_ts_lab.evaluation import rul_metrics as rm
+
+# ── forecasting scorecard ─────────────────────────────
+y_true = np.random.randn(20, 8).astype("float32")     # (N windows, H horizon)
+y_pred = y_true + 0.1 * np.random.randn(20, 8).astype("float32")
+y_train = np.random.randn(200).astype("float32")      # in-sample for MASE scale
+
+# Optional probabilistic:
+levels = np.array([0.1, 0.5, 0.9])
+y_q = np.stack([y_pred - 0.5, y_pred, y_pred + 0.5], axis=-1)  # (N, H, Q)
+
+bundle = fm.score_bundle(
+    y_true, y_pred, y_train=y_train,
+    y_quantiles=y_q, quantile_levels=levels,
+)
+# -> {mae, rmse, smape, mase, crps, pinball_q10/50/90, coverage_80}
+
+# ── RUL scorecard ─────────────────────────────────────
+y_true_rul = np.array([30.0, 25.0, 20.0, 15.0, 10.0])  # days remaining
+y_pred_rul = np.array([32.0, 28.0, 19.0, 12.0, 11.0])
+
+rul_bundle = rm.score_bundle(y_true_rul, y_pred_rul, tolerances=(1, 7, 30))
+# -> {nasa_s_score, mae, rmse, early_mae, late_mae, late_fraction,
+#     hit_rate_tol_1, hit_rate_tol_7, hit_rate_tol_30}
+```
+
+### Data strategy (locked in W1)
+
+| Task | Real data OK? | Why |
+|---|---|---|
+| Forecasting | ✅ YES | OPS-SAT (~4 mo) + NASA (weeks/ch) both work |
+| RUL | ❌ NO | No run-to-failure trajectories in real spacecraft data |
+
+RUL evaluation goes against synthetic scenarios only:
+- **`battery_soc_degradation`** — 6 months synth, EOL = SoC < 30% (W2)
+- **`fuel_mass_projection`** — 2 years synth, EOL = fuel < reserve (W2)
+
+Full design + rationale: [`docs/forecasting_rul_bakeoff.md`](forecasting_rul_bakeoff.md).
+
+**Files (Wave 1)**:
+- `packages/dgx_ts_lab/src/dgx_ts_lab/evaluation/forecasting_metrics.py`
+  (MAE, RMSE, sMAPE, MASE, pinball, CRPS, coverage)
+- `packages/dgx_ts_lab/src/dgx_ts_lab/evaluation/rul_metrics.py`
+  (NASA S-score, hit-rate-at-tolerance, early/late split, calibration pairs)
+
+---
+
 ## DGX procurement showcase (the headline run)
 
 **Proves**: the 8x H200 box can simultaneously train a 1.5B-param multi-task
@@ -578,10 +798,14 @@ Writes `benchmark_reports/capability_cliff/`:
 | `dgx-ts train experiment=<name>` | Train a single detector on a dataset | Phase 0 |
 | `dgx-ts benchmark experiment=<name>` | Run cartesian product (detector × dataset × seed) | Phase 2 |
 | `dgx-ts synth dataset=<name>` | Generate synthetic dataset to disk as parquet | Phase 1 |
+| `pwsh scripts/build_dataset.ps1 <name>` | Materialize one preset if not cached | Phase 1 |
+| `pwsh scripts/build_corpus.ps1` | Batch-materialize the 6-mission EPS corpus | Phase A |
+| `python scripts/download_ops_sat.py` | Fetch real ESA data (connected machine) | Real-data |
 | `dgx-ts export model=<name> dataset=<name> +checkpoint=<path>` | Emit ONNX + model_card + feature_schema | Phase 5 |
 | `dgx-ts explain --run <mlflow_id>` | Generate per-window explanation reports | Phase 7 |
 | `dgx-ts copilot --backend <name>` | Interactive LLM ops co-pilot REPL | Phase 11 |
 | `dgx-ts viz --benchmark-dir <path>` | Render ROC/PR/AUC plots from benchmark output | (viz) |
+| `dgx-ts forecast-bench experiment=<name>` | Forecasting+RUL bake-off (coming in W4) | (F+RUL) |
 
 ---
 
@@ -613,6 +837,10 @@ Writes `benchmark_reports/capability_cliff/`:
 | `Tests can't find package` | Check `packages/<pkg>/pyproject.toml` `[tool.hatch.build.targets.wheel] packages = ["src/<pkg>"]` |
 | `Plots don't render` | Check `benchmark_reports/<name>/*.npz` exist — without them `dgx-ts viz` has nothing to plot |
 | `ANTHROPIC_API_KEY needed` test failure | Live-API test is gated; ignore the skip, or set the env to run it |
+| `dataset=leo_eps_v1` Hydra error | Presets live in a subgroup — use `dataset=presets/leo_eps_v1` |
+| `dgx-ts train dataset=presets/…` re-generates every run | That's the point of `presets/`. Switch to `dataset=cached/<name>` after `build_dataset` |
+| `parquet_telemetry_corpus` complains about channel mismatch | Corpus members must share the exact channel schema — check `channels.yaml` in each `data/synth/<member>/` |
+| OPS-SAT download returns 404 | Zenodo rotated the record — see `docs/ops_sat_provisioning.md` URL-rotation table |
 
 ---
 
