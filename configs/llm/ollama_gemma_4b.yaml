@@ -1,0 +1,6 @@
+# Google Gemma OSS 4B via Ollama (RTX 3080 / small workstation).
+# `ollama pull gemma3:4b` first (update tag when Gemma 4 lands).
+kind: ollama
+model_id: gemma3:4b
+base_url: http://localhost:11434
+timeout_s: 120.0

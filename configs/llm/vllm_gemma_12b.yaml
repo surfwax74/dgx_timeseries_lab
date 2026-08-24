@@ -1,0 +1,16 @@
+# Google Gemma OSS 12B (instruction-tuned) via vLLM — A5000 target.
+#
+# Fits on a single A5000 (24 GB) at bf16 with headroom for KV cache.
+# Also fine on a single H200 with plenty of room for a second workload.
+# License: Gemma Terms of Use (Google) — see docs/gemma_provisioning.md.
+#
+# Update `model_id` to `gemma-4-*` when Gemma 4 releases; verify at
+# https://huggingface.co/google before pulling.
+#
+# Spin up the server with:
+#     scripts/setup_vllm_server.sh /data/llm_weights/gemma-3-12b-it 1 8000
+kind: vllm
+model_id: google/gemma-3-12b-it
+base_url: http://localhost:8000/v1
+api_key: EMPTY
+timeout_s: 120.0

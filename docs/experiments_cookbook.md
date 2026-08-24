@@ -625,9 +625,22 @@ bash scripts/setup_vllm_server.sh /data/llm_weights/Llama-3.1-70B-Instruct 4 800
 dgx-ts copilot --backend vllm --model meta-llama/Llama-3.1-70B-Instruct \
     --base-url http://localhost:8000/v1
 
+# Google Gemma OSS (Gemma 3 pinned; swap to Gemma 4 when it drops)
+bash scripts/setup_vllm_server.sh /data/llm_weights/gemma-3-27b-it 1 8000
+dgx-ts copilot --backend vllm --model google/gemma-3-27b-it \
+    --base-url http://localhost:8000/v1
+# ...or workstation-tier via Ollama:
+ollama pull gemma3:12b && ollama serve &
+dgx-ts copilot --backend ollama --model gemma3:12b
+
 # Air-gap CPU (llama-cpp + GGUF)
 dgx-ts copilot --backend llama_cpp --model data/llm_weights/mistral-7b.gguf
+# ...or Gemma 4B Q4 for the same tier:
+dgx-ts copilot --backend llama_cpp --model data/llm_weights/gemma-3-4b-it.Q4_K_M.gguf
 ```
+
+Full Gemma provisioning walkthrough (HF Hub, Ollama, sneakernet, license):
+[`docs/gemma_provisioning.md`](gemma_provisioning.md).
 
 **With RAG + model card**:
 
@@ -639,8 +652,10 @@ dgx-ts copilot --backend anthropic \
 
 **Files**:
 - Code: `llm/{backend,anthropic_backend,vllm_backend,ollama_backend,llama_cpp_backend,_mock_backend,factory,rag,telemetry_tools,copilot,report_generator,procedure_synth}.py`
-- Configs: `configs/llm/{anthropic,vllm_llama70b,vllm_mistral_8x22b,ollama_llama8b,llama_cpp_mistral7b_q4}.yaml`
-- Doc: `docs/llm_ops_copilot.md`
+- Configs: `configs/llm/*.yaml` — Anthropic, Llama, Mistral, Mixtral,
+  Granite (3 variants), Phi-4, Gemma (5 variants); see
+  [`configs/llm/README.md`](../configs/llm/README.md) for the full inventory + tier picker
+- Docs: `docs/llm_ops_copilot.md`, `docs/gemma_provisioning.md`
 
 ---
 
