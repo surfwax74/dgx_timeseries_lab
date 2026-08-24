@@ -51,6 +51,7 @@ on Windows when not using the `dgx-ts` entry point.
 | Thermal + ADCS PINN bake-off | `dgx-ts benchmark experiment=phase9_pinn_bakeoff` | A5000 | ~30 min |
 | Cross-modal foundation pretrain | `dgx-ts train experiment=phase10_multimodal` | CPU smoke / DGX prod | 30 s / ~3 h |
 | Interactive LLM co-pilot REPL | `dgx-ts copilot --backend mock` | any | live |
+| **Frontier LLM stress run (405B bf16)** | `scripts/setup_vllm_server.sh …405B-Instruct 8 8000` | **8x H200 only** | ~10 min load |
 | Train a Sparse Autoencoder | `python -m dgx_ts_lab.explanation.sae ...` (library) | CPU / GPU | ~1-40 min |
 | Score forecasts (metrics library) | `from dgx_ts_lab.evaluation import forecasting_metrics` | CPU | µs |
 | **Full DGX procurement showcase** | `bash scripts/dgx_showcase.sh` | **8x H200** | ~6-8 h |
@@ -620,9 +621,17 @@ ollama serve &
 ollama pull llama3.1:8b
 dgx-ts copilot --backend ollama --model llama3.1:8b
 
-# Local vLLM (server / DGX tier)
-bash scripts/setup_vllm_server.sh /data/llm_weights/Llama-3.1-70B-Instruct 4 8000
-dgx-ts copilot --backend vllm --model meta-llama/Llama-3.1-70B-Instruct \
+# Local vLLM (server / DGX tier) — Llama 3.3 70B supersedes 3.1 70B
+bash scripts/setup_vllm_server.sh /data/llm_weights/Llama-3.3-70B-Instruct 2 8000
+dgx-ts copilot --backend vllm --model meta-llama/Llama-3.3-70B-Instruct \
+    --base-url http://localhost:8000/v1
+
+# Llama 3.1 405B at full bf16 — the capability-cliff run. Needs ALL 8
+# H200s (~810 GB); does NOT fit an 8x H100 or 8x A100 node (640 GB).
+# Consumes the whole box: nothing trains while this serves.
+VLLM_EXTRA_ARGS="--max-model-len 8192 --gpu-memory-utilization 0.95" \
+  bash scripts/setup_vllm_server.sh /data/llm_weights/Llama-3.1-405B-Instruct 8 8000
+dgx-ts copilot --backend vllm --model meta-llama/Llama-3.1-405B-Instruct \
     --base-url http://localhost:8000/v1
 
 # Gemma 4 26B-A4B MoE — RECOMMENDED DGX default (Apache 2.0).
@@ -648,6 +657,18 @@ MoE routing activates only 3.8B per token, so it serves at roughly
 bf16 VRAM. That is under 10% of one H200, leaving ~7.9 GPUs free for
 Sat-TSFM training. Apache 2.0, so it is also licensing-clean for
 classified deployment.
+
+**The three-tier ladder** — these serve different purposes, not ranked
+alternatives:
+
+| Purpose | Config | GPU cost | Box left for training |
+|---|---|---:|---|
+| Production co-pilot | `vllm_gemma4_26b_a4b` | ~14 GB | ~7.9 GPUs |
+| Max quality, co-resident | `vllm_llama33_70b` (FP8) | ~71 GB | ~7.5 GPUs |
+| **Ceiling / stress** | `vllm_llama31_405b_bf16` | all 8 GPUs | **nothing** |
+
+Sizing math and the H200-only capability cliff:
+[`docs/frontier_model_serving.md`](frontier_model_serving.md).
 
 Full Gemma 4 provisioning walkthrough (family table, HF Hub, Ollama,
 sneakernet, tool-parser + context gotchas):

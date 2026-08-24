@@ -1,0 +1,27 @@
+# Meta Llama 3.1 405B Instruct, FP8 quantized, via vLLM — TP=8.
+#
+# The practical way to run 405B. FP8 halves the weight footprint to
+# ~405 GB, which leaves ~700 GB of the DGX's 1128 GB for KV cache — so
+# you get long context and real batch throughput instead of an OOM.
+# Accuracy cost is small: ~95.4% vs ~96.8% GSM8K exact-match against bf16.
+#
+#   License:   Llama 3.1 Community License (gated on HF — accept first)
+#   Params:    405B, FP8 weights
+#   Context:   128K
+#   VRAM:      ~405 GB -> TP=8 on H200. Also fits 8x H100 / 8x A100 (640 GB).
+#
+# Serve it (all 8 GPUs):
+#     scripts/setup_vllm_server.sh /data/llm_weights/Llama-3.1-405B-Instruct-FP8 8 8000
+#
+# HEADS UP: this occupies the entire box. Nothing trains while it serves.
+# For a co-pilot that co-exists with training, use vllm_gemma4_26b_a4b
+# (~14 GB) or vllm_llama33_70b at FP8 (~71 GB) instead.
+#
+# Repo naming: Meta renamed these at one point. If the ID below 404s, try
+# `meta-llama/Meta-Llama-3.1-405B-Instruct-FP8`, or NVIDIA's equivalent
+# `nvidia/Llama-3.1-405B-Instruct-FP8`.
+kind: vllm
+model_id: meta-llama/Llama-3.1-405B-Instruct-FP8
+base_url: http://localhost:8000/v1
+api_key: EMPTY
+timeout_s: 300.0

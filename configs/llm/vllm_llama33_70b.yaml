@@ -1,0 +1,26 @@
+# Meta Llama 3.3 70B Instruct via vLLM.
+# Supersedes vllm_llama70b.yaml (Llama 3.1 70B) — same parameter count,
+# materially better instruction-following and reasoning. Meta positions
+# it as approaching 3.1-405B quality at 70B cost.
+#
+#   License:   Llama 3.3 Community License (gated on HF — accept first)
+#   Params:    70.6B dense
+#   Context:   128K
+#   VRAM:      ~141 GB bf16  -> TP=2 minimum on H200 (a single 141 GB card
+#                               holds the weights with no room for KV cache)
+#              ~71 GB FP8    -> fits ONE H200 with comfortable KV headroom
+#
+# Serve bf16 across two cards:
+#     scripts/setup_vllm_server.sh /data/llm_weights/Llama-3.3-70B-Instruct 2 8000
+#
+# Serve FP8 on a single card (preferred when you want the box free for
+# training — see docs/frontier_model_serving.md):
+#     scripts/setup_vllm_server.sh /data/llm_weights/Llama-3.3-70B-Instruct-FP8 1 8000
+#
+# Tool parser: llama3_json is correct for Llama 3.x and is the script
+# default, so no 4th arg needed here (unlike Gemma).
+kind: vllm
+model_id: meta-llama/Llama-3.3-70B-Instruct
+base_url: http://localhost:8000/v1
+api_key: EMPTY
+timeout_s: 120.0

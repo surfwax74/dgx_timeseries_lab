@@ -22,8 +22,9 @@ dgx-ts copilot --backend mock        # for CI / smoke
 | Dev workstation (online) | `anthropic` | Best quality when online is OK |
 | RTX 3080 (10 GB) | `ollama_gemma4_e4b` or `llama_cpp_mistral7b_q4` | Gemma 4 E4B (~9.6 GB, Apache 2.0) or Q4 Mistral 7B |
 | A5000 (24 GB) | `vllm_gemma4_12b` / `ollama_phi4` / `vllm_granite_8b` | Gemma 4 12B (256K ctx + audio), Phi-4 14B, Granite 8B |
-| H200 (single, 141 GB) | **`vllm_gemma4_26b_a4b`** or `vllm_gemma4_31b` | MoE at ~14 GB leaves the card free; 31B dense if you need max reasoning |
-| 8x H200 (DGX) | **`vllm_gemma4_26b_a4b`** | ~14 GB for the co-pilot leaves ~7.9 GPUs for training. Displaces `vllm_mistral_8x22b`, which needs multi-GPU sharding. |
+| H200 (single, 141 GB) | **`vllm_gemma4_26b_a4b`** / `vllm_llama33_70b` (FP8) / `vllm_gemma4_31b` | MoE at ~14 GB leaves the card free; Llama 3.3 70B FP8 (~71 GB) for max quality on one card |
+| 8x H200 (DGX) — production | **`vllm_gemma4_26b_a4b`** | ~14 GB for the co-pilot leaves ~7.9 GPUs for training. Displaces `vllm_mistral_8x22b`, which needs multi-GPU sharding. |
+| 8x H200 (DGX) — **ceiling / stress** | `vllm_llama31_405b_bf16` | ~810 GB at TP=8. Fits H200 (1128 GB); **does not fit** 8x H100 / 8x A100 (640 GB). Consumes the whole box. |
 | Air-gap | any vLLM / Ollama / llama.cpp; **never** `anthropic` | API call would breach air-gap |
 
 ## When to pick which model (not just which tier)
@@ -31,8 +32,10 @@ dgx-ts copilot --backend mock        # for CI / smoke
 | If you need… | Pick | Backend |
 |---|---|---|
 | Maximum frontier quality, online OK | `claude-sonnet-4-5` | `anthropic` |
-| Maximum quality, air-gap | Mixtral 8×22B | `vllm_mistral_8x22b` |
-| Strong agentic reasoning, single-H200 footprint | Llama 70B INT8 | `vllm_llama70b` |
+| **Maximum quality, air-gap, cost no object** | **Llama 3.1 405B bf16** | `vllm_llama31_405b_bf16` |
+| 405B quality with usable throughput + context | Llama 3.1 405B FP8 | `vllm_llama31_405b_fp8` |
+| Near-frontier while leaving the box free | Llama 3.3 70B (FP8) | `vllm_llama33_70b` |
+| Strong agentic reasoning, single-H200 footprint | Llama 3.3 70B | `vllm_llama33_70b` (supersedes `vllm_llama70b`) |
 | **Reliable JSON-mode** for procedure synthesis | **Granite-Code 34B** | `vllm_granite_34b_code` |
 | Apache-2.0 licensing for DoD / classified contexts | Granite 3.2 (8B) or Granite-Code | `vllm_granite_8b` / `*_code` |
 | Workstation-tier agentic on A5000 | Phi-4 14B | `vllm_phi4` / `ollama_phi4` |
@@ -50,10 +53,18 @@ dgx-ts copilot --backend mock        # for CI / smoke
 - `anthropic.yaml` → `claude-sonnet-4-5`
 
 ### Meta / Mistral (Llama Community License or Apache 2.0)
-- `vllm_llama70b.yaml` → `meta-llama/Llama-3.1-70B-Instruct` (Llama license ⚠)
+- `vllm_llama31_405b_bf16.yaml` → `meta-llama/Llama-3.1-405B-Instruct` — **~810 GB, TP=8. H200-only capability cliff.** (Llama license ⚠)
+- `vllm_llama31_405b_fp8.yaml` → `meta-llama/Llama-3.1-405B-Instruct-FP8` (~405 GB, TP=8) (Llama license ⚠)
+- `vllm_llama33_70b.yaml` → `meta-llama/Llama-3.3-70B-Instruct` — **preferred 70B**; supersedes 3.1 70B (Llama license ⚠)
+- `vllm_llama70b.yaml` → `meta-llama/Llama-3.1-70B-Instruct` (legacy; prefer 3.3) (Llama license ⚠)
 - `ollama_llama8b.yaml` → `llama3.1:8b` (Llama license ⚠)
 - `vllm_mistral_8x22b.yaml` → `mistralai/Mixtral-8x22B-Instruct-v0.1` (Apache 2.0)
 - `llama_cpp_mistral7b_q4.yaml` → `mistral-7b-instruct-v0.3.Q4_K_M.gguf` (Apache 2.0)
+
+> **Sizing + the H200 capability cliff** for the 70B / 405B tier:
+> [`docs/frontier_model_serving.md`](../../docs/frontier_model_serving.md).
+> Short version: 405B at bf16 needs ~810 GB, which fits 8× H200
+> (1128 GB) and does **not** fit 8× H100 or 8× A100 (640 GB).
 
 ### IBM Granite (all Apache 2.0)
 - `vllm_granite_8b.yaml` → `ibm-granite/granite-3.2-8b-instruct` (general instruct)
@@ -85,7 +96,7 @@ dgx-ts copilot --backend mock        # for CI / smoke
 |---|---|---|
 | Apache 2.0 | **Gemma 4 (all sizes)**, Mixtral, Mistral 7B, all Granite | Preferred for any deployment, including classified |
 | MIT | Phi-4 | Preferred |
-| Llama 3.1 Community | Llama 3.1 70B, Llama 3.1 8B | Has acceptable-use restrictions and 700M-MAU clause; some government / defense applications may need separate negotiation. Gemma 4 or Granite are the drop-in Apache replacements. |
+| Llama 3.1 / 3.3 Community | Llama 3.1 405B, Llama 3.3 70B, Llama 3.1 70B, Llama 3.1 8B | Acceptable-use restrictions + 700M-MAU clause. Repos are **gated** — someone must accept the license on HF before download, which adds a step to the air-gap staging flow. Some government / defense applications may need separate negotiation. Gemma 4 or Granite are the drop-in Apache replacements. |
 | Anthropic API (commercial) | Claude Sonnet 4.5 | NOT air-gap deployable; never use in classified context |
 
 > **Changed in Gemma 4**: Gemma 3 shipped under a custom "Gemma Terms of

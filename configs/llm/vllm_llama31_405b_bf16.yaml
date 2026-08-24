@@ -1,0 +1,37 @@
+# Meta Llama 3.1 405B Instruct at FULL bf16 precision, TP=8.
+#
+# *** THE CAPABILITY-CLIFF CONFIG. ***
+#
+# This is the workload that a DGX H200 can run and a comparably-sized
+# H100 or A100 node cannot — not "slower", but "does not fit":
+#
+#   405B x 2 bytes (bf16)   = ~810 GB of weights
+#   8x H200 @ 141 GB        = 1128 GB   -> fits, ~318 GB left for KV cache
+#   8x H100 @  80 GB        =  640 GB   -> DOES NOT FIT
+#   8x A100 @  80 GB        =  640 GB   -> DOES NOT FIT
+#
+# H100/A100 nodes must quantize to FP8 to host 405B at all. Only the
+# 141 GB H200 SKU holds the unquantized model in a single node. That is
+# a hard yes/no boundary, which is exactly what makes it worth a slide.
+#
+# NVSwitch also earns its keep here: TP=8 all-reduces every token across
+# all eight GPUs, so interconnect bandwidth is on the critical path.
+# PCIe-attached cards degrade sharply at this tensor-parallel width.
+#
+#   License:   Llama 3.1 Community License (gated on HF — accept first)
+#   Params:    405B, bf16
+#   Context:   128K native — but KV cache competes with the 318 GB
+#              headroom, so start with --max-model-len 8192 and raise it
+#              while watching memory.
+#
+# Serve it (requires all 8 GPUs; expect a long load from disk):
+#     VLLM_EXTRA_ARGS="--max-model-len 8192 --gpu-memory-utilization 0.95" \
+#       scripts/setup_vllm_server.sh /data/llm_weights/Llama-3.1-405B-Instruct 8 8000
+#
+# This is a stress / showcase configuration, NOT a production co-pilot.
+# It consumes the whole machine. See docs/frontier_model_serving.md.
+kind: vllm
+model_id: meta-llama/Llama-3.1-405B-Instruct
+base_url: http://localhost:8000/v1
+api_key: EMPTY
+timeout_s: 600.0
