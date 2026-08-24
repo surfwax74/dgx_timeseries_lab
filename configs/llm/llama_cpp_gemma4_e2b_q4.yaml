@@ -1,0 +1,21 @@
+# Google Gemma 4 E2B Q4 GGUF via llama-cpp — CPU / air-gap edge tier.
+#
+# Smallest Gemma 4: 5.1B total weights, ~2.3B effective per token thanks
+# to Per-Layer Embeddings. Runs on a CPU-only air-gapped workstation.
+# Apache 2.0, so redistribution inside a secure enclave is unencumbered.
+#
+#   Context:   128K native (lower n_ctx below to save RAM)
+#   Modality:  text + image + audio (llama-cpp text path only, in practice)
+#
+# Sneakernet the GGUF into data/llm_weights/ first. Verify the filename
+# against the release you actually downloaded — GGUF naming varies by
+# publisher. Sources:
+#   https://huggingface.co/google           (official Gemma 4 collection)
+#   https://huggingface.co/bartowski        (third-party GGUF mirror)
+#   https://huggingface.co/lmstudio-community
+kind: llama_cpp
+model_path: data/llm_weights/gemma-4-E2B-it.Q4_K_M.gguf
+n_ctx: 8192               # raise toward 128000 if RAM allows
+n_gpu_layers: 0           # set to e.g. 24 on RTX 3080 to offload layers
+n_threads: null
+verbose: false

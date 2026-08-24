@@ -625,21 +625,32 @@ bash scripts/setup_vllm_server.sh /data/llm_weights/Llama-3.1-70B-Instruct 4 800
 dgx-ts copilot --backend vllm --model meta-llama/Llama-3.1-70B-Instruct \
     --base-url http://localhost:8000/v1
 
-# Google Gemma OSS (Gemma 3 pinned; swap to Gemma 4 when it drops)
-bash scripts/setup_vllm_server.sh /data/llm_weights/gemma-3-27b-it 1 8000
-dgx-ts copilot --backend vllm --model google/gemma-3-27b-it \
+# Gemma 4 26B-A4B MoE — RECOMMENDED DGX default (Apache 2.0).
+# Only 3.8B params activate per token: ~14 GB VRAM, ~4B-dense speed.
+# NOTE the 4th arg `gemma` — wrong tool parser breaks tool calls silently.
+bash scripts/setup_vllm_server.sh /data/llm_weights/gemma-4-26B-A4B-it 1 8000 gemma
+dgx-ts copilot --backend vllm --model google/gemma-4-26B-A4B-it \
     --base-url http://localhost:8000/v1
+
 # ...or workstation-tier via Ollama:
-ollama pull gemma3:12b && ollama serve &
-dgx-ts copilot --backend ollama --model gemma3:12b
+ollama pull gemma4:12b && ollama serve &
+dgx-ts copilot --backend ollama --model gemma4:12b
 
 # Air-gap CPU (llama-cpp + GGUF)
 dgx-ts copilot --backend llama_cpp --model data/llm_weights/mistral-7b.gguf
-# ...or Gemma 4B Q4 for the same tier:
-dgx-ts copilot --backend llama_cpp --model data/llm_weights/gemma-3-4b-it.Q4_K_M.gguf
+# ...or Gemma 4 E2B Q4 for the same tier:
+dgx-ts copilot --backend llama_cpp --model data/llm_weights/gemma-4-E2B-it.Q4_K_M.gguf
 ```
 
-Full Gemma provisioning walkthrough (HF Hub, Ollama, sneakernet, license):
+**Why Gemma 4 26B-A4B is the DGX default**: 25.2B total parameters but
+MoE routing activates only 3.8B per token, so it serves at roughly
+4B-dense throughput while answering well above that tier — in ~14 GB of
+bf16 VRAM. That is under 10% of one H200, leaving ~7.9 GPUs free for
+Sat-TSFM training. Apache 2.0, so it is also licensing-clean for
+classified deployment.
+
+Full Gemma 4 provisioning walkthrough (family table, HF Hub, Ollama,
+sneakernet, tool-parser + context gotchas):
 [`docs/gemma_provisioning.md`](gemma_provisioning.md).
 
 **With RAG + model card**:

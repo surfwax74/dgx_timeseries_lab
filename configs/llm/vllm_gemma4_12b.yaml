@@ -1,0 +1,19 @@
+# Google Gemma 4 12B "Unified" via vLLM — A5000 / single-H200 tier.
+#
+# The smallest Gemma 4 that keeps the full 256K context AND adds audio
+# input on top of text+image. If a future voice-driven ops console is on
+# the roadmap, this is the size that supports it without going to 31B.
+#
+#   License:   Apache 2.0
+#   Params:    11.95B dense
+#   Context:   256K native
+#   Modality:  text + image + audio
+#   VRAM:      ~24 GB bf16 — fits an A5000 with room for KV cache
+#
+# Serve it:
+#     scripts/setup_vllm_server.sh /data/llm_weights/gemma-4-12B-it 1 8000 gemma
+kind: vllm
+model_id: google/gemma-4-12B-it
+base_url: http://localhost:8000/v1
+api_key: EMPTY
+timeout_s: 120.0

@@ -1,0 +1,7 @@
+# Google Gemma 4 12B via Ollama (workstation tier, one-command setup).
+# `ollama pull gemma4:12b` first (~16 GB download).
+# Apache 2.0. 256K context, text + image + audio.
+kind: ollama
+model_id: gemma4:12b
+base_url: http://localhost:11434
+timeout_s: 120.0

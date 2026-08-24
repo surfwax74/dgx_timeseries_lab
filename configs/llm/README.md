@@ -20,10 +20,10 @@ dgx-ts copilot --backend mock        # for CI / smoke
 |---|---|---|
 | Laptop / CI | `mock` | No SDK, no network, deterministic |
 | Dev workstation (online) | `anthropic` | Best quality when online is OK |
-| RTX 3080 (10 GB) | `ollama_llama8b` / `llama_cpp_mistral7b_q4` / `llama_cpp_gemma_4b_q4` / `ollama_gemma_4b` | Easy setup, fits Q5 8B / Q4 7B / Q4 4B / Gemma 4B |
-| A5000 (24 GB) | `ollama_phi4` / `vllm_granite_8b` / `vllm_gemma_12b` | Phi-4 14B INT8, Granite 8B bf16, or Gemma 12B bf16 |
-| H200 (single, 141 GB) | `vllm_llama70b` / `vllm_granite_34b_code` / `vllm_gemma_27b` | Frontier 70B, top-tier code, or Gemma 27B multimodal |
-| 8x H200 (DGX) | `vllm_mistral_8x22b` | Tensor-parallel MoE across all 8 GPUs |
+| RTX 3080 (10 GB) | `ollama_gemma4_e4b` or `llama_cpp_mistral7b_q4` | Gemma 4 E4B (~9.6 GB, Apache 2.0) or Q4 Mistral 7B |
+| A5000 (24 GB) | `vllm_gemma4_12b` / `ollama_phi4` / `vllm_granite_8b` | Gemma 4 12B (256K ctx + audio), Phi-4 14B, Granite 8B |
+| H200 (single, 141 GB) | **`vllm_gemma4_26b_a4b`** or `vllm_gemma4_31b` | MoE at ~14 GB leaves the card free; 31B dense if you need max reasoning |
+| 8x H200 (DGX) | **`vllm_gemma4_26b_a4b`** | ~14 GB for the co-pilot leaves ~7.9 GPUs for training. Displaces `vllm_mistral_8x22b`, which needs multi-GPU sharding. |
 | Air-gap | any vLLM / Ollama / llama.cpp; **never** `anthropic` | API call would breach air-gap |
 
 ## When to pick which model (not just which tier)
@@ -36,10 +36,12 @@ dgx-ts copilot --backend mock        # for CI / smoke
 | **Reliable JSON-mode** for procedure synthesis | **Granite-Code 34B** | `vllm_granite_34b_code` |
 | Apache-2.0 licensing for DoD / classified contexts | Granite 3.2 (8B) or Granite-Code | `vllm_granite_8b` / `*_code` |
 | Workstation-tier agentic on A5000 | Phi-4 14B | `vllm_phi4` / `ollama_phi4` |
-| Google's OSS on H200 (also multimodal-capable) | Gemma 3 27B | `vllm_gemma_27b` |
-| Google's OSS on A5000 | Gemma 3 12B | `vllm_gemma_12b` / `ollama_gemma_12b` |
-| Small-but-capable on RTX 3080 (10 GB) | Mistral 7B Q4 or Gemma 3 4B | `llama_cpp_mistral7b_q4` / `ollama_gemma_4b` |
-| Air-gap, no GPU (Gemma) | Gemma 3 4B Q4 GGUF | `llama_cpp_gemma_4b_q4` |
+| **Best capability per VRAM byte** (co-pilot default) | **Gemma 4 26B-A4B MoE** | `vllm_gemma4_26b_a4b` |
+| Max open-model reasoning, single H200 | Gemma 4 31B dense | `vllm_gemma4_31b` |
+| Audio input (future voice ops console) | Gemma 4 12B / E4B / E2B | `vllm_gemma4_12b` / `ollama_gemma4_e4b` |
+| 256K-context RAG over procedures | Gemma 4 (12B and up) | `vllm_gemma4_12b` / `*_26b_a4b` / `*_31b` |
+| Small-but-capable on RTX 3080 (10 GB) | Gemma 4 E4B or Mistral 7B Q4 | `ollama_gemma4_e4b` / `llama_cpp_mistral7b_q4` |
+| Air-gap, no GPU | Gemma 4 E2B Q4 GGUF | `llama_cpp_gemma4_e2b_q4` |
 | Pure CI smoke (no SDK, deterministic) | mock backend | `mock` |
 
 ## Full config inventory
@@ -63,28 +65,37 @@ dgx-ts copilot --backend mock        # for CI / smoke
 - `vllm_phi4.yaml` → `microsoft/phi-4` (14B)
 - `ollama_phi4.yaml` → `phi4:14b` (via Ollama)
 
-### Google Gemma OSS (Gemma Terms of Use)
-- `vllm_gemma_27b.yaml` → `google/gemma-3-27b-it` (single H200)
-- `vllm_gemma_12b.yaml` → `google/gemma-3-12b-it` (A5000)
-- `ollama_gemma_12b.yaml` → `gemma3:12b` (A5000 via Ollama)
-- `ollama_gemma_4b.yaml` → `gemma3:4b` (RTX 3080)
-- `llama_cpp_gemma_4b_q4.yaml` → `gemma-3-4b-it.Q4_K_M.gguf` (air-gap CPU)
+### Google Gemma 4 (Apache 2.0, released 2 Apr 2026)
+- `vllm_gemma4_26b_a4b.yaml` → `google/gemma-4-26B-A4B-it` — **MoE, 3.8B active, ~14 GB. Recommended DGX default.**
+- `vllm_gemma4_31b.yaml` → `google/gemma-4-31B-it` (30.7B dense, single H200)
+- `vllm_gemma4_12b.yaml` → `google/gemma-4-12B-it` (A5000; 256K ctx + audio in)
+- `ollama_gemma4_12b.yaml` → `gemma4:12b` (workstation via Ollama)
+- `ollama_gemma4_e4b.yaml` → `gemma4:e4b` (RTX 3080; Per-Layer Embeddings)
+- `llama_cpp_gemma4_e2b_q4.yaml` → `gemma-4-E2B-it.Q4_K_M.gguf` (air-gap CPU)
 
-> **Version note**: Configs pin `gemma-3-*` — Google's latest confirmed
-> OSS release. When Gemma 4 (or later) drops, only the model_id string
-> changes. Full swap procedure + license implications:
+> ⚠ **Serving gotcha**: pass `gemma` as the 4th arg to
+> `scripts/setup_vllm_server.sh` so vLLM picks the right tool-call parser.
+> The default (`llama3_json`) fails *silently* — chat works, telemetry
+> tool calls quietly stop parsing. Details:
 > [`docs/gemma_provisioning.md`](../../docs/gemma_provisioning.md).
 
 ## Licensing notes for security review
 
 | License | Models in inventory | Air-gap implication |
 |---|---|---|
-| Apache 2.0 | Mixtral, Mistral 7B, all Granite, Phi-4 (MIT, equivalent) | Preferred for any deployment |
+| Apache 2.0 | **Gemma 4 (all sizes)**, Mixtral, Mistral 7B, all Granite | Preferred for any deployment, including classified |
 | MIT | Phi-4 | Preferred |
-| Llama 3.1 Community | Llama 3.1 70B, Llama 3.1 8B | Has acceptable-use restrictions and 700M-MAU clause; some government / defense applications may need separate negotiation. Granite is the drop-in Apache replacement. |
-| Gemma Terms of Use | Gemma 3 (all sizes) | Custom Google license: commercial + fine-tuning permitted, subject to Prohibited Use Policy. Redistribution requires license copy + attribution. Not on the "Apache-only" allow-list some DoD contracts require — verify with legal. |
+| Llama 3.1 Community | Llama 3.1 70B, Llama 3.1 8B | Has acceptable-use restrictions and 700M-MAU clause; some government / defense applications may need separate negotiation. Gemma 4 or Granite are the drop-in Apache replacements. |
 | Anthropic API (commercial) | Claude Sonnet 4.5 | NOT air-gap deployable; never use in classified context |
+
+> **Changed in Gemma 4**: Gemma 3 shipped under a custom "Gemma Terms of
+> Use" carrying a Prohibited Use Policy and redistribution obligations,
+> which kept it off the Apache-only allow-list some DoD contracts
+> require. Gemma 4 is plain Apache 2.0 — it now sits in the same
+> licensing tier as Granite, with materially better capability per VRAM
+> byte. The Gemma 3 configs were removed in favour of Gemma 4; recover
+> them from git history if you already have Gemma 3 weights staged.
 
 See `docs/foundation_model_roadmap.md` § "Why Granite was added" for the
 full Llama-vs-Granite reasoning. Provisioning walkthrough for the
-Gemma family: [`docs/gemma_provisioning.md`](../../docs/gemma_provisioning.md).
+Gemma 4 family: [`docs/gemma_provisioning.md`](../../docs/gemma_provisioning.md).

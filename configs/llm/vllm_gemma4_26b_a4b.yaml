@@ -1,0 +1,25 @@
+# Google Gemma 4 26B-A4B (Mixture-of-Experts) via vLLM.
+# *** RECOMMENDED DEFAULT for the DGX ops co-pilot. ***
+#
+# Why this one: 25.2B total parameters but only 3.8B activate per token,
+# so it serves at roughly 4B-dense speed while answering at a quality
+# tier well above 4B. In bf16 it occupies ~14 GB — under 10% of a single
+# H200 (141 GB) — which leaves the rest of the DGX free for Sat-TSFM
+# training. That is the dual-use capacity story in one config file.
+#
+#   License:   Apache 2.0 (Gemma 4 dropped the custom Gemma license)
+#   Context:   256K native
+#   Modality:  text + image
+#   VRAM:      ~14 GB bf16 / ~8 GB at Q4
+#
+# Serve it (TP=1 is correct — the model fits one GPU comfortably):
+#     scripts/setup_vllm_server.sh /data/llm_weights/gemma-4-26B-A4B-it 1 8000 gemma
+#
+# NOTE ON CONTEXT: vLLM does not default to the full 256K. Pass
+#     --max-model-len 32768        (or higher, VRAM permitting)
+# via VLLM_EXTRA_ARGS if you need long-context RAG over procedures.
+kind: vllm
+model_id: google/gemma-4-26B-A4B-it
+base_url: http://localhost:8000/v1
+api_key: EMPTY
+timeout_s: 120.0

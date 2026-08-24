@@ -1,0 +1,12 @@
+# Google Gemma 4 E4B via Ollama — RTX 3080 / 16 GB-class machines.
+#
+# "E" = efficiency variant using Per-Layer Embeddings: 8B total weights
+# but only ~4.5B effective compute per token, so it punches above its
+# runtime cost on modest GPUs. This is Ollama's default `gemma4` tag.
+#
+# `ollama pull gemma4:e4b` first (~9.6 GB).
+# Apache 2.0. 128K context, text + image + audio.
+kind: ollama
+model_id: gemma4:e4b
+base_url: http://localhost:11434
+timeout_s: 120.0

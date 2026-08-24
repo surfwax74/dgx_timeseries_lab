@@ -1,6 +1,0 @@
-# Google Gemma OSS 12B via Ollama (workstation tier, single-command pull).
-# `ollama pull gemma3:12b` first (update tag when Gemma 4 lands).
-kind: ollama
-model_id: gemma3:12b
-base_url: http://localhost:11434
-timeout_s: 120.0

@@ -1,0 +1,19 @@
+# Google Gemma 4 31B Dense via vLLM — maximum Gemma quality, single H200.
+#
+# Pick this over the 26B-A4B MoE only when you want the highest dense-model
+# quality and have the GPU to spare. The MoE variant is faster per token
+# and cheaper in VRAM; the 31B dense is the stronger reasoner.
+#
+#   License:   Apache 2.0
+#   Params:    30.7B dense
+#   Context:   256K native
+#   Modality:  text + image (no audio on this size)
+#   VRAM:      ~62 GB bf16 — fits one H200, tight on an 80 GB A100
+#
+# Serve it:
+#     scripts/setup_vllm_server.sh /data/llm_weights/gemma-4-31B-it 1 8000 gemma
+kind: vllm
+model_id: google/gemma-4-31B-it
+base_url: http://localhost:8000/v1
+api_key: EMPTY
+timeout_s: 120.0
