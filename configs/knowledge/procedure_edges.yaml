@@ -1,0 +1,87 @@
+# Declared semantic edges for docs/procedures/
+#
+# `references` and `supersedes` are extracted automatically from the
+# markdown — do not list them here. This file carries only the
+# relationships that require human judgment to assert, because getting
+# them wrong changes what retrieval surfaces during an anomaly.
+#
+# Every edge here is reviewable: someone can read the note, open the two
+# documents, and agree or disagree. That is the point of keeping them
+# declared rather than inferring them.
+#
+# Relations:
+#   contradicts  A and B give conflicting guidance for the same situation
+#   resolved_by  A's conflicts are settled by authority document B
+#   constrains   B limits an action that A instructs you to take
+#   depends_on   A's procedure needs data or definitions from B
+
+edges:
+  # ── The core conflict ───────────────────────────────────────────────
+  # This is the relationship the whole retrieval design exists to serve.
+  # Neither document admits the conflict; a reader of either one alone
+  # gets a confident, incomplete answer.
+  - src: EPS-201
+    dst: SYS-001
+    rel: contradicts
+    note: >
+      Different load-shed orders for the same undervoltage condition.
+      EPS-201 sheds payload first and treats heaters as step 2;
+      SYS-001 sheds comms first and retains heaters as survival load.
+
+  # Both sides of the conflict point at the same authority, so arriving
+  # at either one reaches SYS-000 in a single hop.
+  - src: EPS-201
+    dst: SYS-000
+    rel: resolved_by
+    note: "SYS-000 Rev C rule 3 selects shed order by eclipse state."
+  - src: SYS-001
+    dst: SYS-000
+    rel: resolved_by
+    note: "SYS-000 Rev C rule 3 selects shed order by eclipse state."
+
+  # ── Constraints that override the nominal procedure ─────────────────
+  # These are why the naive answer to the tier-4 scenario is dangerous:
+  # EPS-201 tells you to shed heaters and comms, and two other documents
+  # say when you must not.
+  - src: EPS-201
+    dst: TCS-105
+    rel: constrains
+    note: >
+      Heater shed (EPS-201 step 2) is forbidden when thermal margin is
+      under 5 C; TCS-105 defines margin and the 0.4 C/min cooling rate.
+  - src: EPS-201
+    dst: COM-220
+    rel: constrains
+    note: >
+      Transmitter shed (EPS-201 step 3) is forbidden within 45 minutes
+      of a required ground contact.
+  - src: SYS-001
+    dst: COM-220
+    rel: constrains
+    note: >
+      Safe mode sheds comms first, but the command-loss timer and
+      reduced safe-mode contact schedule bound that decision.
+
+  # ── Data dependencies ───────────────────────────────────────────────
+  - src: EPS-201
+    dst: EPS-310
+    rel: depends_on
+    note: >
+      Shed sizing requires the EPS-310 power budget and its 1.2
+      recovery-margin factor. EPS-201 states the shed order but not the
+      arithmetic that decides how far down it you must go.
+  - src: TCS-105
+    dst: EPS-310
+    rel: depends_on
+    note: "Heater load figures (8 W nominal, 14 W peak) come from EPS-310."
+
+  # SYS-000 rule 2 is stated in terms of TCS-105's margin definition, so
+  # the authority itself depends on the constraint document.
+  - src: SYS-000
+    dst: TCS-105
+    rel: depends_on
+    note: "Rule 2's 5 C threshold is defined against TCS-105 operational limits."
+  - src: SYS-000
+    dst: COM-220
+    rel: depends_on
+    note: "Rule 4 is stated in terms of COM-220 required-contact definitions."
