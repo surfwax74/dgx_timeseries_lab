@@ -1,0 +1,32 @@
+id: t1_battery_thermal_limit
+tier: 1
+title: "Single-fact recall — battery operational limit"
+expected_min_tier: "4B / E4B (smallest local model)"
+
+# CONTROL SCENARIO. This is supposed to PASS on a small model.
+# The suite's credibility depends on tier 1 passing everywhere: a
+# demo where the small model fails everything reads as rigged and gets
+# discounted. Showing "the 4B handles this correctly" is what makes the
+# tier-3/4 failures persuasive.
+why_it_escalates: >
+  It does not. This is the control: one fact, one document, no
+  reasoning. Any model that fails here is broken, not merely small.
+
+prompt: |
+  What is the operational maximum temperature for the battery pack,
+  and which procedure document specifies it?
+
+max_tool_iters: 3
+pass_threshold: 0.7
+
+graders:
+  - type: numeric_answer
+    expected: 40
+    tolerance: 0.5
+    unit_hint: "°C|degC|deg C|C\\b"
+    weight: 0.4
+  - type: cites_documents
+    required_all: ["TCS-105"]
+    weight: 0.4
+  - type: no_hallucinated_citation
+    weight: 0.2

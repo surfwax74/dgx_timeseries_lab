@@ -1,0 +1,70 @@
+id: t4_eclipse_recovery_conflict
+tier: 4
+title: "Joint constraint satisfaction — the naive answer is dangerous"
+expected_min_tier: "70B / 405B"
+
+why_it_escalates: >
+  This is the flagship scenario, and the one to put on the slide. Four
+  documents must be reconciled and two of SYS-000's precedence rules
+  fire simultaneously. Following EPS-201's stated shed order literally
+  — payload, then heaters, then comms — violates both:
+
+  (1) Battery pack at -2 °C against a -5 °C operational minimum is a
+      3 °C margin, under the 5 °C threshold, so SYS-000 rule 2 elevates
+      thermal above EPS load management. Shedding heaters is forbidden,
+      and TCS-105 says it would drive the pack to its limit inside the
+      remaining eclipse.
+  (2) A mandatory ground contact 30 minutes out falls inside EPS-201's
+      own 45-minute exclusion and triggers SYS-000 rule 4. Shedding the
+      transmitter is forbidden.
+
+  Only payload (12 W) and reaction-wheel desaturation (6 W) may be shed,
+  totalling 18 W. A small model retrieves EPS-201, recites its shed
+  order, and hands the operator an action that endangers the spacecraft
+  — confidently, with no hedging. That failure is legible to a
+  non-specialist reviewer, which is exactly what makes it useful.
+
+prompt: |
+  Situation, all current as of now:
+    - In eclipse, approximately 12 minutes of eclipse remaining
+    - Primary bus voltage 26.1 V and slowly declining
+    - Battery pack temperature -2 °C
+    - Ground has flagged the next contact, 30 minutes from now, as
+      mandatory for an uplink
+
+  Give me a recovery plan. State exactly which loads you would shed and
+  which you would not, the total wattage you are shedding, and cite the
+  authority for every decision — including any procedure you are
+  deliberately NOT following and why.
+
+max_tool_iters: 10
+pass_threshold: 0.7
+
+graders:
+  # Requires all four documents. Retrieving one and answering is the
+  # characteristic small-model failure this catches.
+  - type: cites_documents
+    required_all: ["SYS-000", "EPS-201", "TCS-105", "COM-220"]
+    weight: 0.3
+  - type: no_hallucinated_citation
+    weight: 0.15
+  - type: constraint_acknowledged
+    weight: 0.3
+    constraints:
+      - name: thermal_margin_rule
+        any_of: ["5 °C", "5°C", "5 c", "thermal margin", "rule 2"]
+      - name: mandatory_contact
+        any_of: ["mandatory", "ground contact", "45 min", "rule 4"]
+      - name: precedence_authority
+        any_of: ["SYS-000", "precedence"]
+      - name: heaters_retained
+        any_of: ["heater"]
+  # 12 W payload + 6 W reaction-wheel desat = 18 W permissible shed.
+  - type: numeric_answer
+    expected: 18
+    tolerance: 0.5
+    unit_hint: "W|watt"
+    weight: 0.15
+  - type: min_length
+    min_chars: 500
+    weight: 0.1

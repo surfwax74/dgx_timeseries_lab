@@ -52,6 +52,7 @@ on Windows when not using the `dgx-ts` entry point.
 | Cross-modal foundation pretrain | `dgx-ts train experiment=phase10_multimodal` | CPU smoke / DGX prod | 30 s / ~3 h |
 | Interactive LLM co-pilot REPL | `dgx-ts copilot --backend mock` | any | live |
 | **Frontier LLM stress run (405B bf16)** | `scripts/setup_vllm_server.sh …405B-Instruct 8 8000` | **8x H200 only** | ~10 min load |
+| **Prove you need the bigger model** | `python scripts/run_capability_evals.py --model …` | any | ~5-20 min |
 | Train a Sparse Autoencoder | `python -m dgx_ts_lab.explanation.sae ...` (library) | CPU / GPU | ~1-40 min |
 | Score forecasts (metrics library) | `from dgx_ts_lab.evaluation import forecasting_metrics` | CPU | µs |
 | **Full DGX procurement showcase** | `bash scripts/dgx_showcase.sh` | **8x H200** | ~6-8 h |
@@ -669,6 +670,53 @@ alternatives:
 
 Sizing math and the H200-only capability cliff:
 [`docs/frontier_model_serving.md`](frontier_model_serving.md).
+
+### Proving you need the bigger model — capability escalation suite
+
+Basic Q&A demos *lose* the procurement argument: a 4B model answers
+"what does a battery SoC anomaly indicate?" perfectly well, and the
+reviewer concludes a small local model is enough. This suite finds the
+point where that stops being true, with objective grading.
+
+```bash
+# Smoke it — no GPU, no network
+python scripts/run_capability_evals.py --backend mock
+
+# See what would run, without calling a model
+python scripts/run_capability_evals.py --list
+
+# The real comparison (serve each model on its own port first)
+python scripts/run_capability_evals.py \
+    --model ollama:gemma4:e4b \
+    --model vllm:google/gemma-4-26B-A4B-it@http://localhost:8000/v1 \
+    --model vllm:meta-llama/Llama-3.1-405B-Instruct@http://localhost:8001/v1 \
+    --output runs/capability_evals
+
+# Only the tiers that discriminate
+python scripts/run_capability_evals.py --model ... --tiers 3,4
+```
+
+Four escalating tiers over a RAG corpus of interlocking procedures in
+`docs/procedures/`:
+
+| Tier | Probes | Expected to pass |
+|---|---|---|
+| 1 Recall | One fact, one document | Everything, incl. 4B |
+| 2 Synthesis | Reconcile documents that contradict | 12B+ |
+| 3 Agentic | Chained tool calls, each using the last result | 26B MoE / 70B |
+| 4 Frontier | Joint constraints + arithmetic + precedence | 70B / 405B |
+
+Tier 1 is deliberately easy and **must pass everywhere** — it is the
+control that keeps the demo honest. Grading is machine-checkable
+throughout (tool sequences, citation validity, numeric tolerance, JSON
+schema), so results don't rest on whose prose read better. The report's
+headline is each model's **escalation point**: the lowest tier where it
+first fails.
+
+Extending this with your own real-world scenarios is the intended
+workflow — see [`configs/llm_evals/README.md`](../configs/llm_evals/README.md)
+for the YAML schema, the grader catalogue, and the required
+gold-answer/naive-answer tests that keep a new scenario honest.
 
 Full Gemma 4 provisioning walkthrough (family table, HF Hub, Ollama,
 sneakernet, tool-parser + context gotchas):

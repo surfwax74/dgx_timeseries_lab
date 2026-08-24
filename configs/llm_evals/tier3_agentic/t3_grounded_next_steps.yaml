@@ -1,0 +1,35 @@
+id: t3_grounded_next_steps
+tier: 3
+title: "Retrieve-then-recommend with citation discipline"
+expected_min_tier: "26B MoE / 70B"
+
+why_it_escalates: >
+  Asks for actionable next steps that must be grounded in retrieved
+  procedure text rather than the model's parametric memory of "what
+  satellites usually do". The no_hallucinated_citation grader is the
+  discriminator: models that answer from memory rather than retrieval
+  invent plausible document IDs, which is immediately visible and
+  needs no domain expert to adjudicate.
+
+prompt: |
+  Bus voltage has been sitting at 26.2 V for the last two minutes.
+  Give me the concrete next steps, in order. Every step must cite the
+  procedure document it comes from — do not recommend anything you
+  cannot attribute to a retrieved document.
+
+max_tool_iters: 6
+pass_threshold: 0.7
+
+graders:
+  - type: tool_sequence
+    required: ["lookup_procedure"]
+    min_iterations: 1
+    weight: 0.3
+  - type: no_hallucinated_citation
+    weight: 0.3
+  - type: cites_documents
+    required_all: ["EPS-201"]
+    weight: 0.2
+  - type: contains_any
+    phrases: ["payload"]
+    weight: 0.2

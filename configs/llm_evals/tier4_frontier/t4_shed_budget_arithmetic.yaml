@@ -1,0 +1,44 @@
+id: t4_shed_budget_arithmetic
+tier: 4
+title: "Multi-step arithmetic with a margin factor that is easy to miss"
+expected_min_tier: "70B / 405B"
+
+why_it_escalates: >
+  EPS-310 defines required_shed = deficit × 1.2. With generation at
+  40 W against a 55 W nominal draw the deficit is 15 W, so 18 W must be
+  shed — not 15 W. A model that skips the margin factor produces 15 W,
+  concludes the payload plus something small will do, and under-sheds.
+  The 1.2 factor is stated once, in a code block, in a document the
+  operator did not name. Retrieval has to find it and the arithmetic has
+  to survive two steps.
+
+prompt: |
+  Solar array output has degraded to 40 W. We are running the nominal
+  load. Using the recovery-margin method in the power budget procedure,
+  how many watts must we shed, and which specific loads from the
+  undervoltage procedure get us there? Show the calculation.
+
+max_tool_iters: 6
+pass_threshold: 0.7
+
+graders:
+  # 15 W deficit x 1.2 = 18 W required shed.
+  - type: numeric_answer
+    expected: 18
+    tolerance: 0.5
+    unit_hint: "W|watt"
+    weight: 0.35
+  - type: cites_documents
+    required_all: ["EPS-310"]
+    weight: 0.2
+  - type: no_hallucinated_citation
+    weight: 0.1
+  - type: constraint_acknowledged
+    weight: 0.35
+    constraints:
+      - name: margin_factor_applied
+        any_of: ["1.2", "20%", "20 %", "margin factor"]
+      - name: deficit_computed
+        any_of: ["15", "deficit"]
+      - name: loads_named
+        any_of: ["payload"]

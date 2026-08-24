@@ -1,0 +1,42 @@
+id: t2_heater_shed_safety
+tier: 2
+title: "Cross-document safety check with arithmetic"
+expected_min_tier: "12B+"
+
+why_it_escalates: >
+  EPS-201 lists secondary heaters as shed step 2 and moves on. The
+  reason that is dangerous lives in TCS-105: a 0.4 °C/min cooling rate
+  against a 13 °C span gives ~32 minutes to the operational minimum,
+  versus a 35-minute eclipse. The model has to pull a rate from one
+  document, a limit from another, and notice the margin is negative.
+  Small models answer "yes, heaters are shed step 2" and stop.
+
+prompt: |
+  We are 5 minutes into eclipse and considering shedding the secondary
+  heaters per EPS-201. Is that safe? Show your reasoning with the
+  relevant numbers.
+
+max_tool_iters: 4
+pass_threshold: 0.65
+
+graders:
+  - type: cites_documents
+    required_all: ["TCS-105"]
+    weight: 0.25
+  - type: no_hallucinated_citation
+    weight: 0.15
+  - type: constraint_acknowledged
+    weight: 0.35
+    constraints:
+      - name: cooling_rate
+        any_of: ["0.4", "cooling rate", "per minute"]
+      - name: eclipse_duration
+        any_of: ["35 min", "35-minute", "35 minutes", "eclipse duration"]
+      - name: battery_minimum
+        any_of: ["-5", "operational minimum", "operational min"]
+  # ~32 minutes to reach the limit; correct answers surface this figure.
+  - type: numeric_answer
+    expected: 32
+    tolerance: 3
+    unit_hint: "min|minute"
+    weight: 0.25

@@ -1,0 +1,37 @@
+id: t3_anomaly_triage_chain
+tier: 3
+title: "Three-step tool chain where each call depends on the last"
+expected_min_tier: "26B MoE / 70B"
+
+why_it_escalates: >
+  The model must inspect telemetry, use what it finds to query the
+  anomaly history for the same window, then use *that* to pick the
+  right procedure — three round trips through the tool loop, each
+  informed by the previous result. Small models exhibit two
+  characteristic failures here: firing a single tool and answering from
+  it, or firing all tools at once in one iteration with guessed
+  arguments (the min_iterations grader catches the second).
+
+prompt: |
+  Something looks wrong on the EPS bus in the last few minutes. Work out
+  what happened: check the bus voltage behaviour, then check whether an
+  anomaly was flagged in that same window, then pull the procedure that
+  applies. Tell me what you found at each step and cite the procedure.
+
+max_tool_iters: 8
+pass_threshold: 0.65
+
+graders:
+  - type: tool_sequence
+    required: ["query_telemetry", "query_anomaly_history", "lookup_procedure"]
+    ordered: true
+    min_iterations: 2
+    weight: 0.5
+  - type: cites_documents
+    required_any: ["EPS-201", "SYS-001"]
+    weight: 0.2
+  - type: no_hallucinated_citation
+    weight: 0.15
+  - type: min_length
+    min_chars: 300
+    weight: 0.15

@@ -1,0 +1,26 @@
+id: t1_undervoltage_trigger
+tier: 1
+title: "Single-fact recall — undervoltage trigger threshold"
+expected_min_tier: "4B / E4B (smallest local model)"
+
+why_it_escalates: >
+  Control scenario. One threshold, stated once, in one document.
+
+prompt: |
+  At what primary bus voltage does the EPS undervoltage response
+  procedure trigger? Name the procedure.
+
+max_tool_iters: 3
+pass_threshold: 0.7
+
+graders:
+  - type: numeric_answer
+    expected: 26.5
+    tolerance: 0.05
+    unit_hint: "V|volt"
+    weight: 0.4
+  - type: cites_documents
+    required_all: ["EPS-201"]
+    weight: 0.4
+  - type: no_hallucinated_citation
+    weight: 0.2

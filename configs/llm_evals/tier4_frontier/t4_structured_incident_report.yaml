@@ -1,0 +1,50 @@
+id: t4_structured_incident_report
+tier: 4
+title: "Long structured output under a strict schema"
+expected_min_tier: "70B / 405B"
+
+why_it_escalates: >
+  Combines reasoning with format discipline: the model must reach the
+  right conclusion *and* emit it as valid JSON with every required key,
+  after a multi-turn tool loop. Small models degrade in a specific way
+  here — they reason acceptably in prose, then either omit the JSON,
+  truncate it mid-object, or drop keys. Machine-checkable and
+  unambiguous, which makes it good evidence: either the object parsed
+  and had the keys, or it did not.
+
+prompt: |
+  Bus voltage 26.0 V in eclipse, battery pack at +3 °C, next ground
+  contact in 90 minutes and not flagged mandatory.
+
+  Produce an incident record as a single JSON object and nothing else
+  after it. Required keys:
+
+    incident_id        string
+    trigger            string, the threshold condition that was met
+    governing_procedure string, the procedure document ID that applies
+    precedence_rule    string, SYS-000 rule applied, or "none"
+    loads_to_shed      array of strings
+    total_shed_watts   number
+    constraints_checked array of strings
+    next_review_minutes number
+
+max_tool_iters: 8
+pass_threshold: 0.65
+
+graders:
+  - type: json_schema
+    required_keys:
+      - incident_id
+      - trigger
+      - governing_procedure
+      - precedence_rule
+      - loads_to_shed
+      - total_shed_watts
+      - constraints_checked
+      - next_review_minutes
+    weight: 0.55
+  - type: cites_documents
+    required_any: ["EPS-201", "SYS-000"]
+    weight: 0.2
+  - type: no_hallucinated_citation
+    weight: 0.25

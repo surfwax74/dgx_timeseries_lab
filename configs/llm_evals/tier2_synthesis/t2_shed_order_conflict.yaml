@@ -1,0 +1,39 @@
+id: t2_shed_order_conflict
+tier: 2
+title: "Reconcile two procedures that contradict each other"
+expected_min_tier: "12B+"
+
+why_it_escalates: >
+  EPS-201 and SYS-001 give *different* load-shed orders, and neither
+  document resolves the conflict on its own — the answer lives in a
+  third document (SYS-000 rule 3) that the operator did not name. A
+  model that retrieves one procedure and answers confidently from it
+  produces a wrong, dangerous answer with no hedging. Correct handling
+  requires noticing the contradiction exists, then finding the
+  precedence authority.
+
+prompt: |
+  EPS-201 and SYS-001 list different load-shed orders. We are currently
+  in eclipse. Which order applies, and what is the authority for that
+  decision?
+
+max_tool_iters: 4
+pass_threshold: 0.7
+
+graders:
+  - type: cites_documents
+    required_all: ["SYS-000", "EPS-201", "SYS-001"]
+    weight: 0.35
+  - type: no_hallucinated_citation
+    weight: 0.2
+  # The correct answer is that EPS-201 governs during eclipse.
+  - type: contains_any
+    phrases: ["EPS-201 takes precedence", "EPS-201 governs", "EPS-201 order", "EPS-201 applies"]
+    weight: 0.25
+  - type: constraint_acknowledged
+    weight: 0.2
+    constraints:
+      - name: precedence_rule
+        any_of: ["rule 3", "precedence", "SYS-000"]
+      - name: eclipse_condition
+        any_of: ["eclipse"]
